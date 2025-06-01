@@ -1,0 +1,11 @@
+/* src/styles/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html.rtl {
+  direction: rtl;
+}
+html.ltr {
+  direction: ltr;
+}
