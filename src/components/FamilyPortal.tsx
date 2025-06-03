@@ -16,6 +16,7 @@ import { getDateWindow, ViewMode } from '@utils/dateRange';
 import { getAccessToken } from '@services/auth';
 import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
+import { detectDeviceType } from '@utils/device';
 
 // Add this type declaration at the top of the file (or in a global.d.ts if you prefer)
 declare global {
@@ -853,6 +854,41 @@ useEffect(() => {
     }
   };
 
+  // Device detection
+  const [deviceType, setDeviceType] = useState<'tv' | 'mobile' | 'desktop'>('desktop');
+  useEffect(() => {
+    const type = detectDeviceType();
+    setDeviceType(type);
+    console.log('[Device Detection] Detected device type:', type);
+  }, []);
+
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (deviceType === 'tv' && !isAuthenticated && !linkCode) {
+      fetch('/.netlify/functions/device-code', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => setLinkCode(data.code));
+    }
+  }, [deviceType, isAuthenticated, linkCode]);
+
+  if (deviceType === 'tv' && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-purple-900 p-4 text-center">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full">
+          <h1 className="text-3xl font-bold mb-6 text-gray-800">Link this TV</h1>
+          <div className="mb-6">
+            <div className="text-5xl font-mono font-bold text-blue-700 tracking-widest mb-2">{linkCode || '------'}</div>
+            <div className="text-gray-600 mb-2">On your phone or computer, go to:</div>
+            <div className="text-lg font-semibold text-blue-700 mb-2">{window.location.origin + '/link'}</div>
+            <div className="text-gray-500">and enter the code above to link this TV.</div>
+          </div>
+          <div className="text-xs text-gray-400">Waiting for device to be linked…</div>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <div className={`min-h-screen bg-gradient-to-br from-blue-900 to-purple-900 flex items-center justify-center p-4 ${isRTL ? 'rtl' : 'ltr'}`}>
@@ -935,14 +971,16 @@ useEffect(() => {
             >
               {language === 'en' ? 'עב' : 'EN'}
             </button>
-            
+            {/* Device debug box */}
+            <span style={{ fontSize: '12px', background: '#0001', color: '#333', borderRadius: 4, padding: '2px 8px', marginLeft: 4 }}>
+              Device: {deviceType}
+            </span>
             <button
               onClick={openSettings}
               className="p-3 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 transition-all"
             >
               <Settings size={24} />
             </button>
-            
             <button
               onClick={handleSignOut}
               className="px-6 py-3 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 transition-all font-medium"
@@ -1091,11 +1129,11 @@ useEffect(() => {
                 ))
               ) : (
                 messages.slice(0, settings.messagesCount).map((message, idx) => (
-                  <div key={message.id} className={`${settings.compactMode ? 'p-2' : 'p-3'} bg-gray-50 dark:bg-gray-700 rounded-lg`}>  
-                    <div className="flex items-center justify-between mb-1">
+                <div key={message.id} className={`${settings.compactMode ? 'p-2' : 'p-3'} bg-gray-50 dark:bg-gray-700 rounded-lg`}>
+                  <div className="flex items-center justify-between mb-1">
                       <span className={`text-xs text-gray-500 dark:text-gray-400`}>{message.timestamp}</span>
                       <span className={`px-2 py-1 rounded-full text-xs border ${getPriorityColor(message.priority)}`}>{message.priority}</span>
-                    </div>
+                  </div>
                     <div className={`text-gray-700 dark:text-gray-300 ${settings.compactMode ? 'text-sm' : 'text-base'} font-medium mb-1`}>{message.text}</div>
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-500 dark:text-gray-400">{message.author}</div>
@@ -1108,8 +1146,8 @@ useEffect(() => {
                           {messageUpdating[message.id] ? '...' : 'Mark as Read'}
                         </button>
                       )}
-                    </div>
                   </div>
+                </div>
                 ))
               )}
             </div>
@@ -1147,18 +1185,18 @@ useEffect(() => {
                         }
                         return (
                           <div key={todo.id} className={`flex items-center space-x-2 py-1 px-2 rounded-lg ${highlight}`}>
-                            <input
-                              type="checkbox"
-                              checked={todo.completed}
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
                               onChange={() => handleToggleTodoCompleted(todo, idx, category)}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                               disabled={!!todoUpdating[todo.id]}
                             />
                             <span className="flex-1 truncate text-sm text-gray-800 dark:text-white">{todo.task}</span>
                             <span className="text-xs text-gray-500 w-16 truncate">{todo.assignedTo}</span>
                             <span className="text-xs text-gray-500 w-16 truncate">{todo.dueDate}</span>
                             <span className={`px-2 py-0.5 rounded-full text-xs border ${getPriorityColor(todo.priority)}`}>{todo.priority}</span>
-                          </div>
+                </div>
                         );
                       })}
                     </div>
@@ -1655,6 +1693,11 @@ useEffect(() => {
           </div>
         </div>
       )}
+
+      {/* DEBUG: Show detected device type */}
+      <pre style={{fontSize: '12px', background: '#0002', color: '#333', maxWidth: 300, margin: 8, padding: 4, borderRadius: 4}}>
+        Device: {deviceType}
+      </pre>
     </div>
   );
 };
