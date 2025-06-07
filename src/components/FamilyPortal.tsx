@@ -863,12 +863,25 @@ useEffect(() => {
   }, []);
 
   const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linkDebug, setLinkDebug] = useState<string | null>(null); // <-- debug info
 
   useEffect(() => {
     if (deviceType === 'tv' && !isAuthenticated && !linkCode) {
       fetch('/.netlify/functions/device-code', { method: 'POST' })
-        .then(res => res.json())
-        .then(data => setLinkCode(data.code));
+        .then(async (res) => {
+          let data: any;
+          try {
+            data = await res.json();
+          } catch (e) {
+            setLinkDebug('Failed to parse JSON: ' + e);
+            return;
+          }
+          setLinkDebug('API response: ' + JSON.stringify(data));
+          setLinkCode(data.code);
+        })
+        .catch((err) => {
+          setLinkDebug('Fetch error: ' + err);
+        });
     }
   }, [deviceType, isAuthenticated, linkCode]);
 
@@ -879,6 +892,9 @@ useEffect(() => {
           <h1 className="text-3xl font-bold mb-6 text-gray-800">Link this TV</h1>
           <div className="mb-6">
             <div className="text-5xl font-mono font-bold text-blue-700 tracking-widest mb-2">{linkCode || '------'}</div>
+            {linkDebug && (
+              <div style={{ fontSize: '12px', color: '#b00', marginBottom: 8, wordBreak: 'break-all' }}>{linkDebug}</div>
+            )}
             <div className="text-gray-600 mb-2">On your phone or computer, go to:</div>
             <div className="text-lg font-semibold text-blue-700 mb-2">{window.location.origin + '/link'}</div>
             <div className="text-gray-500">and enter the code above to link this TV.</div>
