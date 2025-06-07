@@ -1,6 +1,36 @@
 // src/services/googleAuth.ts
 /* eslint-disable @typescript-eslint/consistent-type-imports */
-type TokenClient = google.accounts.oauth2.TokenClient;
+
+// Add type definitions for Google Sign-In
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        oauth2: {
+          initTokenClient: (config: {
+            client_id: string;
+            scope: string;
+            prompt: string;
+            callback: (response: TokenResponse) => void;
+            error_callback?: (error: { type: string }) => void;
+          }) => TokenClient;
+          revoke: (token: string, callback: () => void) => void;
+        };
+      };
+    };
+  }
+}
+
+interface TokenResponse {
+  access_token?: string;
+  expires_in?: number;
+  error?: string;
+}
+
+type TokenClient = {
+  callback: (response: TokenResponse) => void;
+  requestAccessToken: (config?: { prompt: string }) => void;
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // Storage helpers
@@ -56,25 +86,42 @@ export async function signInWithGoogle(): Promise<string> {
       client_id: CLIENT_ID,
       scope: SCOPES,
       prompt: 'consent',
-      callback: () => {}           // replaced each request
+      callback: () => {},           // replaced each request
+      error_callback: (error) => {
+        console.error('Google Sign-In error:', error);
+        if (error.type === 'popup_closed_by_user') {
+          alert('Please allow popups for this site to sign in with Google');
+        }
+      }
     });
   }
-  
-
 
   // ---- exchange / refresh
   return new Promise<string>((resolve, reject) => {
     tokenClient!.callback = (resp) => {
-      if (resp.error || !resp.access_token) {
+      if (resp.error) {
+        console.error('Token error:', resp.error);
+        if (resp.error === 'popup_closed_by_user') {
+          alert('Please allow popups for this site to sign in with Google');
+        }
         reject(resp);
+      } else if (!resp.access_token) {
+        reject(new Error('No access token received'));
       } else {
         cachedAccessToken = resp.access_token;
-        tokenExpiresAt    = Date.now() + resp.expires_in * 1_000;
+        tokenExpiresAt = Date.now() + (resp.expires_in || 3600) * 1_000;
         saveToken(cachedAccessToken, tokenExpiresAt);        // ← persist
         resolve(cachedAccessToken);
       }
     };
-    tokenClient!.requestAccessToken();
+    
+    try {
+      tokenClient!.requestAccessToken({ prompt: 'consent' });
+    } catch (err) {
+      console.error('Failed to request access token:', err);
+      alert('Please allow popups for this site to sign in with Google');
+      reject(err);
+    }
   });
 }
 
