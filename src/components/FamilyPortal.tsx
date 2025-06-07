@@ -9,9 +9,9 @@ import { Settings, Calendar, MessageSquare, CheckSquare, Image, Sun, Cloud, Clou
 import SignInButton from '@components/SignInButton';
 import { signInWithGoogle } from '@services/googleAuth';
 import { fetchCalendarEvents } from '@services/calendar';
-import { fetchWeatherData } from '@services/weather';
+import { fetchWeather } from '@services/weather';
 import { fetchSheetRows, updateSheetCell } from '@services/sheets';
-import type { CalendarEvent, Message, Todo, WeatherData, Photo } from '@types';
+import { CalendarEvent, Message, Todo, WeatherData, Photo, Translations } from '../types';
 import { getDateWindow, ViewMode } from '@utils/dateRange';
 import { getAccessToken } from '@services/auth';
 import defaultPhoto from '../assets/images/default.jpg';
@@ -94,7 +94,7 @@ const FamilyPortal = () => {
   const [todoUpdating, setTodoUpdating] = useState<{[id: number]: boolean}>({});
 
   // Translations
-  const translations = {
+  const translations: Translations = {
     en: {
       title: 'Family Portal',
       calendar: 'Calendar',
@@ -212,32 +212,7 @@ const FamilyPortal = () => {
   const dayOffsets = calendar ? Array.from({ length: calendar.days }, (_, i) => i) : [];
   const isRTL = language === 'he';
 
-  // Mock data for demonstration
-  /*
   useEffect(() => {
-    loadMockData();
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-*//*
-  useEffect(() => {
-    signInWithGoogle().catch(() => {
-      // ignore – user hasn't granted access yet /
-    });
-    loadMockData();
-
-    fetchCalendarEvents()
-    .then(setEvents)
-    .catch(err => {
-      console.error('Calendar fetch failed', err);
-    });
-
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);  
-*/
-
-useEffect(() => {
     console.log('🚀 useEffect fired - about to call fetchCalendarEvents');
     fetchCalendarEvents()
       .then((events) => {
@@ -248,31 +223,21 @@ useEffect(() => {
       .catch(console.error);
 
     // Fetch weather data
-    fetchWeatherData(settings.location)
+    fetchWeather()
       .then((data) => {
-        console.log('🌤️ Got weather data:', data);
+        console.log('✔ got weather data:', data);
         setWeatherData(data);
       })
-      .catch((error) => {
-        console.error('Error fetching weather:', error);
-        // Load mock data if fetch fails
-        console.log('Loading mock weather data as fallback');
-        const mockData = getMockWeatherData();
-        console.log('Setting mock weather data:', mockData);
-        setWeatherData(mockData);
-      });
-  
-    // Load mock data for other features
-    loadMockData();
-  
+      .catch(console.error);
+
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, [settings.location]);
+  }, []);
 
-// Add a separate useEffect to monitor weather data changes
-useEffect(() => {
-  console.log('Weather data changed:', weatherData);
-}, [weatherData]);
+  // Add a separate useEffect to monitor weather data changes
+  useEffect(() => {
+    console.log('Weather data changed:', weatherData);
+  }, [weatherData]);
 
   const loadMockData = () => {
     const today = new Date();
