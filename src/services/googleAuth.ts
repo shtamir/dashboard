@@ -29,7 +29,7 @@ interface TokenResponse {
 
 type TokenClient = {
   callback: (response: TokenResponse) => void;
-  requestAccessToken: (config?: { prompt: string }) => void;
+  requestAccessToken: (config?: { prompt: string; hint?: string }) => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -91,6 +91,8 @@ export async function signInWithGoogle(): Promise<string> {
         console.error('Google Sign-In error:', error);
         if (error.type === 'popup_closed_by_user') {
           alert('Please allow popups for this site to sign in with Google');
+        } else if (error.type === 'host_not_supported') {
+          alert('This domain is not authorized for Google Sign-In. Please contact support.');
         }
       }
     });
@@ -103,6 +105,8 @@ export async function signInWithGoogle(): Promise<string> {
         console.error('Token error:', resp.error);
         if (resp.error === 'popup_closed_by_user') {
           alert('Please allow popups for this site to sign in with Google');
+        } else if (resp.error === 'host_not_supported') {
+          alert('This domain is not authorized for Google Sign-In. Please contact support.');
         }
         reject(resp);
       } else if (!resp.access_token) {
@@ -116,7 +120,10 @@ export async function signInWithGoogle(): Promise<string> {
     };
     
     try {
-      tokenClient!.requestAccessToken({ prompt: 'consent' });
+      tokenClient!.requestAccessToken({ 
+        prompt: 'consent',
+        hint: window.location.origin // Add the current origin as a hint
+      });
     } catch (err) {
       console.error('Failed to request access token:', err);
       alert('Please allow popups for this site to sign in with Google');
