@@ -1,8 +1,8 @@
 export interface CalendarEvent {
   id: string;
-  title: string;
-  start: Date;
-  end: Date;
+  summary: string;
+  start: { dateTime: string; timeZone?: string };
+  end: { dateTime: string; timeZone?: string };
   description?: string;
   location?: string;
   color?: string;
@@ -46,6 +46,8 @@ export interface WeatherData {
     feels_like: number;
     humidity: number;
     wind_speed: number;
+    sunrise: number;
+    sunset: number;
     weather: Array<{
       id: number;
       main: string;
@@ -76,13 +78,6 @@ export interface WeatherData {
       icon: string;
     }>;
   }>;
-  temperature?: number;
-  condition?: string;
-  forecast?: any[];
-  threeHourForecast?: any[];
-  sunrise?: string;
-  sunset?: string;
-  dailyForecast?: any[];
 }
 
 export interface WeatherResponse {
