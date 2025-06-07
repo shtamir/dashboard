@@ -6,60 +6,60 @@ const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY;
 const CITY = 'Tel Aviv';
 const COUNTRY = 'IL';
 
-interface WeatherItem {
-  dt: number;
-  main: {
-    temp: number;
-  };
-  weather: Array<{
-    id: number;
-    main: string;
-  }>;
-}
-
-export const fetchWeather = async (): Promise<WeatherData> => {
+export async function fetchWeather(): Promise<WeatherData> {
   try {
     const response = await axios.get<WeatherResponse>(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${CITY},${COUNTRY}&appid=${API_KEY}&units=metric`
+      `https://api.openweathermap.org/data/2.5/onecall?lat=32.0853&lon=34.7818&exclude=minutely&units=metric&appid=${API_KEY}`
     );
 
-    const current = {
-      temp: Math.round(response.data.list[0].main.temp),
-      condition: response.data.list[0].weather[0].main,
-      icon: getWeatherIcon(response.data.list[0].weather[0].id)
+    return {
+      current: {
+        temp: response.data.current.temp,
+        feels_like: response.data.current.feels_like,
+        humidity: response.data.current.humidity,
+        wind_speed: response.data.current.wind_speed,
+        weather: response.data.current.weather
+      },
+      hourly: response.data.hourly.map(hour => ({
+        dt: hour.dt,
+        temp: hour.temp,
+        weather: hour.weather
+      })),
+      daily: response.data.daily.map(day => ({
+        dt: day.dt,
+        temp: {
+          min: day.temp.min,
+          max: day.temp.max
+        },
+        weather: day.weather
+      }))
     };
-
-    const hourly = response.data.list.slice(0, 8).map((item: WeatherItem) => ({
-      time: new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric' }),
-      temp: Math.round(item.main.temp),
-      condition: item.weather[0].main,
-      icon: getWeatherIcon(item.weather[0].id)
-    }));
-
-    const daily = response.data.list
-      .filter((_: WeatherItem, index: number) => index % 8 === 0)
-      .slice(0, 5)
-      .map((item: WeatherItem) => ({
-        date: new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-        temp: Math.round(item.main.temp),
-        condition: item.weather[0].main,
-        icon: getWeatherIcon(item.weather[0].id)
-      }));
-
-    return { current, hourly, daily };
   } catch (error) {
     console.error('Error fetching weather:', error);
     throw error;
   }
-};
+}
 
-const getWeatherIcon = (code: number): string => {
-  if (code >= 200 && code < 300) return '⛈️';
-  if (code >= 300 && code < 400) return '🌧️';
-  if (code >= 500 && code < 600) return '🌧️';
-  if (code >= 600 && code < 700) return '❄️';
-  if (code >= 700 && code < 800) return '🌫️';
-  if (code === 800) return '☀️';
-  if (code > 800) return '☁️';
-  return '🌈';
-};
+export function getWeatherIcon(code: string): string {
+  const icons: { [key: string]: string } = {
+    '01d': '☀️',
+    '01n': '🌙',
+    '02d': '⛅',
+    '02n': '☁️',
+    '03d': '☁️',
+    '03n': '☁️',
+    '04d': '☁️',
+    '04n': '☁️',
+    '09d': '🌧️',
+    '09n': '🌧️',
+    '10d': '🌦️',
+    '10n': '🌧️',
+    '11d': '⛈️',
+    '11n': '⛈️',
+    '13d': '🌨️',
+    '13n': '🌨️',
+    '50d': '🌫️',
+    '50n': '🌫️'
+  };
+  return icons[code] || '❓';
+}

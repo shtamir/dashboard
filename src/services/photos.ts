@@ -16,7 +16,7 @@ export async function fetchPhotos(accessToken: string): Promise<Photo[]> {
     });
 
     const mediaItems = response.data.mediaItems || [];
-    return mediaItems.map((item: MediaItem) => ({
+    return mediaItems.map((item: any) => ({
       id: item.id || '',
       url: item.baseUrl || '',
       caption: item.description || ''
