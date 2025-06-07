@@ -1,4 +1,5 @@
-const fetch = require('node-fetch'); // At the top of your file
+//const fetch = require('node-fetch'); // At the top of your file
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 let codes = {}; // In-memory for demo; use a DB for production
 
