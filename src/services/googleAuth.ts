@@ -17,6 +17,7 @@ declare global {
             terms_of_service_url?: string;
             popup_type?: string;
             state?: string;
+            origin?: string;
           }) => TokenClient;
           revoke: (token: string, callback: () => void) => void;
         };
@@ -33,7 +34,7 @@ interface TokenResponse {
 
 type TokenClient = {
   callback: (response: TokenResponse) => void;
-  requestAccessToken: (config?: { prompt: string; hint?: string; popup_type?: string }) => void;
+  requestAccessToken: (config?: { prompt: string; hint?: string; popup_type?: string; origin?: string }) => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -85,6 +86,9 @@ export async function signInWithGoogle(): Promise<string> {
   await ensureGisLoaded();
 
   if (!tokenClient) {
+    const currentOrigin = window.location.origin;
+    console.log('Current origin:', currentOrigin); // Debug log
+
     // @ts-ignore
     tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
@@ -96,15 +100,22 @@ export async function signInWithGoogle(): Promise<string> {
         if (error.type === 'popup_closed_by_user') {
           alert('Please allow popups for this site to sign in with Google');
         } else if (error.type === 'host_not_supported') {
+          console.error('Host validation failed:', {
+            origin: currentOrigin,
+            hostname: window.location.hostname,
+            href: window.location.href
+          });
           alert('This domain is not authorized for Google Sign-In. Please contact support.');
         }
       },
       // Add privacy policy and terms of service URLs
-      privacy_policy_url: `${window.location.origin}/privacy`,
-      terms_of_service_url: `${window.location.origin}/terms`,
+      privacy_policy_url: `${currentOrigin}/privacy`,
+      terms_of_service_url: `${currentOrigin}/terms`,
       // Add COOP handling
       popup_type: 'redirect',
-      state: window.location.origin
+      state: currentOrigin,
+      // Add host validation
+      origin: currentOrigin
     });
   }
 
@@ -116,6 +127,11 @@ export async function signInWithGoogle(): Promise<string> {
         if (resp.error === 'popup_closed_by_user') {
           alert('Please allow popups for this site to sign in with Google');
         } else if (resp.error === 'host_not_supported') {
+          console.error('Host validation failed:', {
+            origin: window.location.origin,
+            hostname: window.location.hostname,
+            href: window.location.href
+          });
           alert('This domain is not authorized for Google Sign-In. Please contact support.');
         }
         reject(resp);
@@ -130,11 +146,13 @@ export async function signInWithGoogle(): Promise<string> {
     };
     
     try {
+      const currentOrigin = window.location.origin;
       // Use redirect flow instead of popup
       tokenClient!.requestAccessToken({ 
         prompt: 'consent',
-        hint: window.location.origin,
-        popup_type: 'redirect'
+        hint: currentOrigin,
+        popup_type: 'redirect',
+        origin: currentOrigin
       });
     } catch (err) {
       console.error('Failed to request access token:', err);
