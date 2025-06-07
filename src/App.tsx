@@ -7,7 +7,7 @@ const App = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<FamilyPortal />} />
-      <Route path="/link" element={<LinkDevice />} />
+      <Route path="link" element={<LinkDevice />} />
     </Routes>
   </BrowserRouter>
 );
