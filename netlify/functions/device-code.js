@@ -1,5 +1,5 @@
-const { google } = require('googleapis');
-const { OAuth2Client } = require('google-auth-library');
+import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 
 // Initialize OAuth2 client
 const oauth2Client = new OAuth2Client(
@@ -11,7 +11,7 @@ const oauth2Client = new OAuth2Client(
 // In-memory storage for codes (replace with database in production)
 const codes = new Map();
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   console.log('📥 Device code function called:', {
     method: event.httpMethod,
     path: event.path,
