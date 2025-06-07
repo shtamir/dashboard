@@ -13,6 +13,8 @@ declare global {
             prompt: string;
             callback: (response: TokenResponse) => void;
             error_callback?: (error: { type: string }) => void;
+            privacy_policy_url?: string;
+            terms_of_service_url?: string;
           }) => TokenClient;
           revoke: (token: string, callback: () => void) => void;
         };
@@ -94,7 +96,10 @@ export async function signInWithGoogle(): Promise<string> {
         } else if (error.type === 'host_not_supported') {
           alert('This domain is not authorized for Google Sign-In. Please contact support.');
         }
-      }
+      },
+      // Add privacy policy and terms of service URLs
+      privacy_policy_url: `${window.location.origin}/privacy`,
+      terms_of_service_url: `${window.location.origin}/terms`
     });
   }
 
