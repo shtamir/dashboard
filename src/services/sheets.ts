@@ -43,5 +43,18 @@ export const fetchTodos = async (): Promise<Todo[]> => {
   }
 };
 
-export async function fetchSheetRows(tabName: string, accessToken: string): Promise<any[]> {
-  const url = `
+export const fetchSheetRows = async (tabName: string, accessToken: string): Promise<any[]> => {
+  try {
+    const sheets = google.sheets({ version: 'v4' });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEETS_ID,
+      range: `${tabName}!A:Z`,
+      auth: new google.auth.OAuth2().setCredentials({ access_token: accessToken })
+    });
+
+    return response.data.values || [];
+  } catch (error) {
+    console.error('Error fetching sheet rows:', error);
+    return [];
+  }
+};
