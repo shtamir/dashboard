@@ -864,6 +864,7 @@ useEffect(() => {
 
   const [linkCode, setLinkCode] = useState<string | null>(null);
   const [linkDebug, setLinkDebug] = useState<string | null>(null); // <-- debug info
+  const [linkStatus, setLinkStatus] = useState<'pending' | 'linked' | null>(null);
 
   useEffect(() => {
     if (deviceType === 'tv' && !isAuthenticated && !linkCode) {
@@ -878,12 +879,41 @@ useEffect(() => {
           }
           setLinkDebug('API response: ' + JSON.stringify(data));
           setLinkCode(data.code);
+          setLinkStatus('pending');
         })
         .catch((err) => {
           setLinkDebug('Fetch error: ' + err);
         });
     }
   }, [deviceType, isAuthenticated, linkCode]);
+
+  // Add polling effect
+  useEffect(() => {
+    if (!linkCode || linkStatus === 'linked') return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/.netlify/functions/device-code?code=${linkCode}`);
+        if (!res.ok) {
+          setLinkDebug('Poll error: ' + await res.text());
+          return;
+        }
+        const data = await res.json();
+        setLinkDebug('Poll response: ' + JSON.stringify(data));
+        
+        if (data.status === 'linked') {
+          setLinkStatus('linked');
+          clearInterval(pollInterval);
+          // Reload the page to trigger authentication
+          window.location.reload();
+        }
+      } catch (err) {
+        setLinkDebug('Poll error: ' + err);
+      }
+    }, 2000); // Poll every 2 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [linkCode, linkStatus]);
 
   if (deviceType === 'tv' && !isAuthenticated) {
     return (
@@ -899,7 +929,9 @@ useEffect(() => {
             <div className="text-lg font-semibold text-blue-700 mb-2">{window.location.origin + '/link'}</div>
             <div className="text-gray-500">and enter the code above to link this TV.</div>
           </div>
-          <div className="text-xs text-gray-400">Waiting for device to be linked…</div>
+          <div className="text-xs text-gray-400">
+            {linkStatus === 'linked' ? 'Device linked! Reloading...' : 'Waiting for device to be linked…'}
+          </div>
         </div>
       </div>
     );
