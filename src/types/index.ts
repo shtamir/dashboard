@@ -10,16 +10,23 @@ export interface CalendarEvent {
 }
 
 export interface Message {
-  id: string;
+  id: number;
   text: string;
   from: string;
   priority: 'high' | 'medium' | 'low';
+  timestamp?: string;
+  author?: string;
 }
 
 export interface Todo {
-  id: string;
+  id: number;
   text: string;
   completed: boolean;
+  task?: string;
+  assignedTo?: string;
+  dueDate?: string;
+  priority?: 'high' | 'medium' | 'low';
+  category?: string;
 }
 
 export interface Photo {
@@ -61,4 +68,29 @@ export interface CalendarState {
   events: CalendarEvent[];
   startDate: string;
   days: number;
+}
+
+export interface WeatherResponse {
+  list: Array<{
+    dt: number;
+    main: {
+      temp: number;
+    };
+    weather: Array<{
+      id: number;
+      main: string;
+    }>;
+  }>;
+}
+
+export interface SheetsResponse {
+  data: {
+    values?: string[][];
+  };
+}
+
+export interface MediaItem {
+  id?: string;
+  baseUrl?: string;
+  description?: string;
 } 

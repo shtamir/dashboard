@@ -10,7 +10,7 @@ import SignInButton from '@components/SignInButton';
 import { signInWithGoogle } from '@services/googleAuth';
 import { fetchCalendarEvents } from '@services/calendar';
 import { fetchWeather } from '@services/weather';
-import { fetchSheetRows, updateSheetCell } from '@services/sheets';
+import { fetchMessages, fetchTodos, fetchSheetRows, updateSheetCell } from '@services/sheets';
 import { CalendarEvent, Message, Todo, WeatherData, Photo, Translations } from '../types';
 import { getDateWindow, ViewMode } from '@utils/dateRange';
 import { getAccessToken } from '@services/auth';
@@ -708,57 +708,51 @@ const FamilyPortal = () => {
   // Fetch messages and todos from Google Sheets
   useEffect(() => {
     async function fetchData() {
-      if (!isAuthenticated) return;
-      // Fetch Messages
-      setMessagesLoading(true);
-      setMessagesError(null);
       try {
+        setIsLoading(true);
         const token = await getAccessToken();
-        const rows = await fetchSheetRows('Messages', token);
-        // Header: Timestamp, Author, Message, Priority, Read
-        const header = rows[0] || [];
-        const dataRows = rows.slice(1);
-        const msgs: Message[] = dataRows.map((row, i) => ({
-          id: i + 1,
-          timestamp: row[0] ?? '',
-          author: row[1] ?? '',
-          text: row[2] ?? '',
-          priority: (row[3] ?? 'low').toLowerCase(),
-          read: (row[4] ?? '').toString().toLowerCase() === 'true',
-        }));
-        setMessages(msgs);
-      } catch (err: any) {
-        setMessagesError('Failed to fetch messages.');
-        setMessages([]);
-        console.error('Messages fetch error:', err);
+        
+        if (token) {
+          // Fetch calendar events
+          const events = await fetchCalendarEvents();
+          setCalendarEvents(events);
+
+          // Fetch messages
+          setMessagesLoading(true);
+          try {
+            const messages = await fetchMessages(token);
+            setMessages(messages);
+          } catch (error) {
+            console.error('Error fetching messages:', error);
+            setMessagesError('Failed to load messages');
+          } finally {
+            setMessagesLoading(false);
+          }
+
+          // Fetch todos
+          setTodosLoading(true);
+          try {
+            const todos = await fetchTodos(token);
+            setTodos(todos);
+          } catch (error) {
+            console.error('Error fetching todos:', error);
+            setTodosError('Failed to load todos');
+          } finally {
+            setTodosLoading(false);
+          }
+
+          // Fetch weather
+          try {
+            const weather = await fetchWeather();
+            setWeatherData(weather);
+          } catch (error) {
+            console.error('Error fetching weather:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
       } finally {
-        setMessagesLoading(false);
-      }
-      // Fetch Todos
-      setTodosLoading(true);
-      setTodosError(null);
-      try {
-        const token = await getAccessToken();
-        const rows = await fetchSheetRows('ToDo', token);
-        // Header: Task, Assigned To, Due Date, Priority, Category, Completed
-        const header = rows[0] || [];
-        const dataRows = rows.slice(1);
-        const todosList: Todo[] = dataRows.map((row, i) => ({
-          id: i + 1,
-          task: row[0] ?? '',
-          assignedTo: row[1] ?? '',
-          dueDate: row[2] ?? '',
-          priority: (row[3] ?? 'low').toLowerCase(),
-          category: row[4] ?? '',
-          completed: (row[5] ?? '').toString().toLowerCase() === 'true',
-        }));
-        setTodos(todosList);
-      } catch (err: any) {
-        setTodosError('Failed to fetch todos.');
-        setTodos([]);
-        console.error('Todos fetch error:', err);
-      } finally {
-        setTodosLoading(false);
+        setIsLoading(false);
       }
     }
     fetchData();
@@ -784,38 +778,45 @@ const FamilyPortal = () => {
 
   // Mark message as read
   const handleMarkMessageRead = async (msg: Message, idx: number) => {
-    setMessageUpdating(prev => ({ ...prev, [msg.id]: true }));
-    const prevRead = msg.read;
     try {
-      setMessages(messages => messages.map((m, i) => i === idx ? { ...m, read: true } : m));
+      setMessageUpdating({ ...messageUpdating, [idx]: true });
       const token = await getAccessToken();
-      // idx+1 because first row is header
-      await updateSheetCell('Messages', idx + 1, 4, 'TRUE', token); // 4 = 'Read' col
-    } catch (err) {
-      console.error('Update message as read error:', err);
-      setMessages(messages => messages.map((m, i) => i === idx ? { ...m, read: prevRead } : m));
-      alert('Failed to update message as read.');
+      if (!token) throw new Error('No access token');
+
+      // Update the message in the sheet
+      await updateSheetCell('Messages', idx + 2, 3, 'low', token);
+
+      // Update local state
+      setMessages(messages.map((m, i) => 
+        i === idx ? { ...m, priority: 'low' } : m
+      ));
+    } catch (error) {
+      console.error('Error marking message as read:', error);
     } finally {
-      setMessageUpdating(prev => ({ ...prev, [msg.id]: false }));
+      setMessageUpdating({ ...messageUpdating, [idx]: false });
     }
   };
 
   // Mark todo as completed
   const handleToggleTodoCompleted = async (todo: Todo, idx: number, category: string) => {
-    setTodoUpdating(prev => ({ ...prev, [todo.id]: true }));
-    const prevCompleted = todo.completed;
     try {
-      setTodos(todos => todos.map((t, i) => t.id === todo.id ? { ...t, completed: !t.completed } : t));
+      setTodoUpdating({ ...todoUpdating, [idx]: true });
       const token = await getAccessToken();
-      // Find the row index in the original todos array (not grouped)
-      const allTodos: Todo[] = ([] as Todo[]).concat(...Object.values(limitedTodosByCategory));
-      const rowIndex = allTodos.findIndex((t: Todo) => t.id === todo.id) + 1; // +1 for header
-      await updateSheetCell('ToDo', rowIndex, 5, (!todo.completed).toString().toUpperCase(), token); // 5 = 'Completed' col
-    } catch (err) {
-      setTodos(todos => todos.map((t, i) => t.id === todo.id ? { ...t, completed: prevCompleted } : t));
-      alert('Failed to update todo.');
+      if (!token) throw new Error('No access token');
+
+      const newCompleted = !todo.completed;
+      
+      // Update the todo in the sheet
+      await updateSheetCell('Todos', idx + 2, 2, newCompleted ? 'TRUE' : 'FALSE', token);
+
+      // Update local state
+      setTodos(todos.map((t, i) => 
+        i === idx ? { ...t, completed: newCompleted } : t
+      ));
+    } catch (error) {
+      console.error('Error toggling todo:', error);
     } finally {
-      setTodoUpdating(prev => ({ ...prev, [todo.id]: false }));
+      setTodoUpdating({ ...todoUpdating, [idx]: false });
     }
   };
 
