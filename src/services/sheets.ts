@@ -1,61 +1,47 @@
 // src/services/sheets.ts
-import type { Message, Todo } from '../types';
+import { google } from 'googleapis';
+import { Message, Todo } from '../types';
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID;
 
-export async function fetchMessages(): Promise<Message[]> {
-  // TODO: replace with real Google Sheets API v4 call
-  return [
-    { id: 1, text: "Don't forget to take out the trash", from: 'Mom', priority: 'high' }
-  ];
-}
+export const fetchMessages = async (): Promise<Message[]> => {
+  try {
+    const sheets = google.sheets({ version: 'v4' });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEETS_ID,
+      range: 'Messages!A2:D',
+    });
 
-export async function fetchTodos(): Promise<Todo[]> {
-  return [
-    { id: 1, text: 'Pay bills', completed: false }
-  ];
-}
+    return (response.data.values || []).map((row: any[]) => ({
+      id: row[0],
+      text: row[1],
+      from: row[2],
+      priority: row[3] as 'high' | 'medium' | 'low'
+    }));
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return [];
+  }
+};
+
+export const fetchTodos = async (): Promise<Todo[]> => {
+  try {
+    const sheets = google.sheets({ version: 'v4' });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEETS_ID,
+      range: 'Todos!A2:C',
+    });
+
+    return (response.data.values || []).map((row: any[]) => ({
+      id: row[0],
+      text: row[1],
+      completed: row[2] === 'TRUE'
+    }));
+  } catch (error) {
+    console.error('Error fetching todos:', error);
+    return [];
+  }
+};
 
 export async function fetchSheetRows(tabName: string, accessToken: string): Promise<any[]> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_ID}/values/${encodeURIComponent(tabName)}?majorDimension=ROWS`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-  // data.values is an array of arrays (rows)
-  return data.values || [];
-}
-
-export async function updateSheetCell(tab: string, rowIndex: number, colIndex: number, value: string, accessToken: string): Promise<void> {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEETS_ID}/values/${encodeURIComponent(tab)}!${columnToLetter(colIndex + 1)}${rowIndex + 1}?valueInputOption=USER_ENTERED`;
-  const body = {
-    range: `${tab}!${columnToLetter(colIndex + 1)}${rowIndex + 1}`,
-    majorDimension: 'ROWS',
-    values: [[value]]
-  };
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-}
-
-function columnToLetter(col: number): string {
-  let temp: number;
-  let letter = '';
-  let n = col;
-  while (n > 0) {
-    temp = (n - 1) % 26;
-    letter = String.fromCharCode(temp + 65) + letter;
-    n = Math.floor((n - temp - 1) / 26);
-  }
-  return letter;
-}
+  const url = `

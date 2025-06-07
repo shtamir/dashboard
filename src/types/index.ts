@@ -1,14 +1,8 @@
 export interface CalendarEvent {
   id: string;
   summary: string;
-  start: {
-    dateTime: string;
-    timeZone: string;
-  };
-  end: {
-    dateTime: string;
-    timeZone: string;
-  };
+  start: string;
+  end: string;
   description?: string;
   location?: string;
   day?: string;
@@ -16,44 +10,39 @@ export interface CalendarEvent {
 }
 
 export interface Message {
-  id: number;
+  id: string;
   text: string;
   from: string;
   priority: 'high' | 'medium' | 'low';
 }
 
 export interface Todo {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
 }
 
 export interface Photo {
-  id: number;
+  id: string;
   url: string;
-  caption: string;
+  caption?: string;
 }
 
 export interface WeatherData {
   current: {
-    temperature: number;
+    temp: number;
     condition: string;
     icon: string;
-    sunrise: string;
-    sunset: string;
   };
   hourly: Array<{
     time: string;
-    temperature: number;
+    temp: number;
     condition: string;
     icon: string;
   }>;
   daily: Array<{
-    time: string;
-    temperature: {
-      min: number;
-      max: number;
-    };
+    date: string;
+    temp: number;
     condition: string;
     icon: string;
   }>;
@@ -61,19 +50,6 @@ export interface WeatherData {
 
 export interface Translations {
   en: {
-    title: string;
-    calendar: string;
-    messages: string;
-    todos: string;
-    weather: string;
-    photos: string;
-    settings: string;
-    signIn: string;
-    signOut: string;
-    today: string;
-    tomorrow: string;
-    noEvents: string;
-    dailyPhoto: string;
     [key: string]: string;
   };
   he: {
@@ -83,6 +59,6 @@ export interface Translations {
 
 export interface CalendarState {
   events: CalendarEvent[];
-  rangeStart: Date;
+  startDate: string;
   days: number;
 } 
