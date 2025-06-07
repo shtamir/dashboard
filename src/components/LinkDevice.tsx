@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { signInWithGoogle } from '@services/googleAuth';
 
+// Import version from package.json
+const VERSION = '1.0.0'; // This will be replaced by Vite during build
+
 const LinkDevice: React.FC = () => {
   const [code, setCode] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -119,6 +122,7 @@ const LinkDevice: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-900 to-purple-900 p-4 text-center">
       <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">Link Your TV</h1>
+        <div className="text-sm text-gray-500 mb-4">Version {VERSION}</div>
         {!token ? (
           <button
             className="w-full mb-4 bg-red-600 text-white py-3 rounded-lg font-bold text-lg disabled:opacity-50"
