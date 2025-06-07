@@ -3,7 +3,6 @@ import axios from 'axios';
 import { WeatherData, WeatherResponse } from '@types';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY;
-const CITY = 'London';
 
 export async function fetchWeather(): Promise<WeatherData> {
   try {
@@ -12,16 +11,17 @@ export async function fetchWeather(): Promise<WeatherData> {
     );
 
     return {
-      current: response.data.current,
+      current: {
+        temp: response.data.current.temp,
+        feels_like: response.data.current.feels_like,
+        humidity: response.data.current.humidity,
+        wind_speed: response.data.current.wind_speed,
+        sunrise: response.data.current.sunrise,
+        sunset: response.data.current.sunset,
+        weather: response.data.current.weather
+      },
       hourly: response.data.hourly,
-      daily: response.data.daily,
-      temperature: response.data.current.temp,
-      condition: response.data.current.weather[0].main,
-      forecast: response.data.daily,
-      threeHourForecast: response.data.hourly,
-      sunrise: new Date(response.data.current.sunrise * 1000).toISOString(),
-      sunset: new Date(response.data.current.sunset * 1000).toISOString(),
-      dailyForecast: response.data.daily
+      daily: response.data.daily
     };
   } catch (error) {
     console.error('Error fetching weather:', error);

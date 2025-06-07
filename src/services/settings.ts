@@ -1,6 +1,9 @@
 // src/services/settings.ts
+import { ViewMode } from '@utils/dateRange';
+
 interface Settings {
   viewMode: 'work-week' | 'week' | 'month';
+  weekViewMode: 'fullWeek' | 'upcomingWeek' | 'workWeek' | 'weekendFocus' | 'next3Days' | 'todayOnly';
   familyName: string;
   location: string;
   timezone: string;
@@ -9,6 +12,7 @@ interface Settings {
 
 const defaultSettings: Settings = {
   viewMode: 'work-week',
+  weekViewMode: 'fullWeek',
   familyName: '',
   location: '',
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

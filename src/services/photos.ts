@@ -21,7 +21,7 @@ export async function fetchPhotos(): Promise<Photo[]> {
       url: item.baseUrl,
       caption: item.description || '',
       title: item.filename,
-      timestamp: item.mediaMetadata?.creationTime
+      timestamp: item.mediaMetadata?.creationTime || new Date().toISOString()
     }));
   } catch (error) {
     console.error('Error fetching photos:', error);

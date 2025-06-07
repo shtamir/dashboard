@@ -13,7 +13,7 @@ import { fetchWeather } from '@services/weather';
 import { fetchMessages, fetchTodos, fetchSheetRows, updateSheetCell } from '@services/sheets';
 import { fetchPhotos } from '@services/photos';
 import { CalendarEvent, Message, Todo, WeatherData, Photo, Translations } from '@types';
-import { getDateWindow, ViewMode } from '@utils/dateRange';
+import { getDateWindow, ViewMode, DateTimeObject } from '@utils/dateRange';
 import { getAccessToken } from '@services/auth';
 import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
@@ -360,57 +360,50 @@ const FamilyPortal = () => {
   };
 
   // Helper function to get day name
-  const getDayName = (date: Date): string => {
-    return date.toLocaleDateString(language === 'en' ? 'en-US' : 'he-IL', { weekday: 'long' });
+  const getDayName = (date: { dateTime: string; timeZone?: string }): string => {
+    return format(new Date(date.dateTime), 'EEE');
   };
 
   // Helper function to format time
-  const formatTime = (date: Date): string => {
-    return date.toLocaleTimeString(language === 'en' ? 'en-US' : 'he-IL', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const formatTime = (dateTime: string): string => {
+    return format(new Date(dateTime), 'h:mm a');
   };
 
   // Helper function to get events for a specific day
-  const getEventsForDay = (date: Date): CalendarEvent[] => {
+  const getEventsForDay = (date: { dateTime: string; timeZone?: string }): CalendarEvent[] => {
+    if (!calendarEvents) return [];
+    
+    const dayStart = new Date(date.dateTime);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date.dateTime);
+    dayEnd.setHours(23, 59, 59, 999);
+    
     return calendarEvents.filter(event => {
-      // Convert event start to local date at midnight
-      const eventDate = new Date(event.start);
-      const eventLocalMidnight = new Date(
-        eventDate.getFullYear(),
-        eventDate.getMonth(),
-        eventDate.getDate()
-      );
-
-      // Convert compare date to local date at midnight
-      const compareLocalMidnight = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-      );
-
-      return eventLocalMidnight.getTime() === compareLocalMidnight.getTime();
+      const eventStart = new Date(event.start.dateTime);
+      const eventEnd = new Date(event.end.dateTime);
+      return eventStart <= dayEnd && eventEnd >= dayStart;
     });
   };
 
-  const viewModeMap: Record<string, ViewMode> = {
+  const viewModeMap: Record<Settings['weekViewMode'], ViewMode> = {
     fullWeek: 'full-week',
     upcomingWeek: 'upcoming-week',
     workWeek: 'work-week',
     weekendFocus: 'weekend',
     next3Days: 'next-3-days',
     todayOnly: 'today'
-  };
+  } as const;
 
-  const getDaysToShow = (): Date[] => {
+  const getDaysToShow = (): { dateTime: string; timeZone?: string }[] => {
     const viewMode = viewModeMap[settings.weekViewMode] || 'upcoming-week';
     const { start, days } = getDateWindow(viewMode);
-    const result: Date[] = [];
+    const result: { dateTime: string; timeZone?: string }[] = [];
+    const startDate = new Date(start.dateTime);
+    
     for (let i = 0; i < days; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      result.push(d);
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      result.push({ dateTime: d.toISOString(), timeZone: start.timeZone });
     }
     return result;
   };
@@ -433,7 +426,7 @@ const FamilyPortal = () => {
       <div className={`grid gap-2`} style={{gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))`}}>
         {days.map((date, index) => {
           const dayEvents = getEventsForDay(date);
-          const isToday = date.toDateString() === new Date().toDateString();
+          const isToday = new Date(date.dateTime).toDateString() === new Date().toDateString();
           
           return (
             <div key={`events-${index}`} className={`bg-white dark:bg-gray-800 rounded-b-2xl ${settings.compactMode ? 'p-3 min-h-80' : 'p-4 min-h-96'} border-4 border-t-0 ${isToday ? 'border-blue-500' : 'border-transparent'}`}>
@@ -441,11 +434,11 @@ const FamilyPortal = () => {
                 {dayEvents.length > 0 ? dayEvents.map((event) => (
                   <div
                     key={event.id}
-                    style={{ backgroundColor: event.color, color: getContrastTextColor(event.color) }}
+                    style={{ backgroundColor: event.color || '#4CAF50', color: getContrastTextColor(event.color || '#4CAF50') }}
                     className={`${settings.compactMode ? 'p-2' : 'p-3'} rounded-lg text-sm`}
                   >
-                    <div className="font-semibold">{formatTime(event.start)}</div>
-                    <div className="font-medium">{event.title}</div>
+                    <div className="font-semibold">{formatTime(event.start.dateTime)}</div>
+                    <div className="font-medium">{event.summary}</div>
                     {event.person && <div className="text-xs opacity-90">{event.person}</div>}
                   </div>
                 )) : (
@@ -465,59 +458,68 @@ const FamilyPortal = () => {
   const renderWeather = () => {
     if (!weatherData) return null;
 
-    return (
-      <div className={`bg-white dark:bg-gray-800 rounded-2xl ${settings.compactMode ? 'p-4' : 'p-6'}`}>
-        <h3 className={`${settings.compactMode ? 'text-lg' : 'text-xl'} font-bold text-gray-800 dark:text-white ${settings.compactMode ? 'mb-3' : 'mb-4'} flex items-center`}>
-          <Sun className="mr-3" size={20} />
-          {t.weather}
-        </h3>
-        
-        <div className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-          {weatherData.temperature}°{settings.weatherUnit === 'celsius' ? 'C' : 'F'}
-        </div>
-        
-        <div className="text-gray-600 dark:text-gray-400 mb-4">
-          {weatherData.condition}
-        </div>
+    const { current, daily, hourly } = weatherData;
+    const currentWeather = current.weather[0];
+    const temp = current.temp;
+    const feelsLike = current.feels_like;
+    const humidity = current.humidity;
+    const windSpeed = current.wind_speed;
+    const sunrise = new Date(current.sunrise * 1000).toISOString();
+    const sunset = new Date(current.sunset * 1000).toISOString();
 
+    return (
+      <div className="weather-container">
+        <div className="current-weather">
+          <div className="weather-icon">
+            {getWeatherIcon(currentWeather)}
+          </div>
+          <div className="weather-info">
+            <div className="temperature">{Math.round(temp)}°{settings.weatherUnit === 'celsius' ? 'C' : 'F'}</div>
+            <div className="feels-like">Feels like {Math.round(feelsLike)}°{settings.weatherUnit === 'celsius' ? 'C' : 'F'}</div>
+            <div className="condition">{currentWeather.main}</div>
+          </div>
+        </div>
+        <div className="weather-details">
+          <div className="detail">
+            <span className="label">Humidity:</span>
+            <span className="value">{humidity}%</span>
+          </div>
+          <div className="detail">
+            <span className="label">Wind:</span>
+            <span className="value">{Math.round(windSpeed)} m/s</span>
+          </div>
+          <div className="detail">
+            <span className="label">Sunrise:</span>
+            <span className="value">{formatTime(sunrise)}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Sunset:</span>
+            <span className="value">{formatTime(sunset)}</span>
+          </div>
+        </div>
         {settings.showHourlyForecast && (
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-              {settings.forecastInterval === 1 ? t.hoursForecast : `${settings.forecastInterval}-${t.hoursForecast}`}
-            </div>
-            {(() => {
-              if (!weatherData) return null;
-              const forecastArr = settings.forecastInterval === 1
-                ? weatherData.forecast
-                : weatherData.threeHourForecast ?? weatherData.forecast;
-              return (
-            <div className="grid grid-cols-8 gap-2">
-                  {forecastArr.slice(0, 8).map((forecast, index) => {
-                    if (!forecast) return null;
-                  const forecastTime = new Date(forecast.time);
-                  const hour = forecastTime.getHours();
-                  return (
-                    <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center">
-                      <div className="text-sm font-semibold mb-1">
-                        {hour}:00
-                      </div>
-                      <div className="text-2xl mb-1">
-                        {forecast.icon}
-                      </div>
-                      <div className="text-sm font-bold">
-                        {forecast.temperature}°{settings.weatherUnit === 'celsius' ? 'C' : 'F'}
-                      </div>
-                      <div className="text-xs text-white/80">
-                        {forecast.condition}
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-              );
-            })()}
+          <div className="hourly-forecast">
+            {hourly.slice(0, 8).map((hour, index) => (
+              <div key={index} className="hour-forecast">
+                <div className="hour">{formatTime(new Date(hour.dt * 1000).toISOString())}</div>
+                <div className="hour-icon">{getWeatherIcon(hour.weather[0])}</div>
+                <div className="hour-temp">{Math.round(hour.temp)}°</div>
+              </div>
+            ))}
           </div>
         )}
+        <div className="daily-forecast">
+          {daily.slice(1, 6).map((day, index) => (
+            <div key={index} className="day-forecast">
+              <div className="day">{format(new Date(day.dt * 1000), 'EEE')}</div>
+              <div className="day-icon">{getWeatherIcon(day.weather[0])}</div>
+              <div className="day-temp">
+                <span className="max">{Math.round(day.temp.max)}°</span>
+                <span className="min">{Math.round(day.temp.min)}°</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -762,11 +764,15 @@ const FamilyPortal = () => {
 
   // Helper for priority color (Google Sheets-like)
   function getPriorityColor(priority: string) {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-700 border-red-300';
-      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return 'text-red-500';
+      case 'medium':
+        return 'text-yellow-500';
       case 'low':
-      default: return 'bg-green-100 text-green-700 border-green-300';
+        return 'text-green-500';
+      default:
+        return 'text-gray-500';
     }
   }
 
@@ -781,44 +787,27 @@ const FamilyPortal = () => {
   // Mark message as read
   const handleMarkMessageRead = async (msg: Message, idx: number) => {
     try {
-      setMessageUpdating({ ...messageUpdating, [idx]: true });
-      const token = await getAccessToken();
-      if (!token) throw new Error('No access token');
-
-      // Update the message in the sheet
-      await updateSheetCell('Messages', idx + 2, 3, 'low', token);
-
-      // Update local state
-      setMessages(messages.map((m, i) => 
-        i === idx ? { ...m, priority: 'low' } : m
-      ));
+      setMessageUpdating(prev => ({ ...prev, [idx]: true }));
+      await updateSheetCell('Messages', idx + 2, 3, 'TRUE');
+      setMessages(prev => prev.map((m, i) => i === idx ? { ...m, read: true } : m));
     } catch (error) {
       console.error('Error marking message as read:', error);
     } finally {
-      setMessageUpdating({ ...messageUpdating, [idx]: false });
+      setMessageUpdating(prev => ({ ...prev, [idx]: false }));
     }
   };
 
   // Mark todo as completed
-  const handleToggleTodoCompleted = async (todo: Todo, idx: number, category: string) => {
+  const handleToggleTodoCompleted = async (todo: Todo, idx: number) => {
     try {
-      setTodoUpdating({ ...todoUpdating, [idx]: true });
-      const token = await getAccessToken();
-      if (!token) throw new Error('No access token');
-
-      const newCompleted = !todo.completed;
-      
-      // Update the todo in the sheet
-      await updateSheetCell('Todos', idx + 2, 2, newCompleted ? 'TRUE' : 'FALSE', token);
-
-      // Update local state
-      setTodos(todos.map((t, i) => 
-        i === idx ? { ...t, completed: newCompleted } : t
-      ));
+      setTodoUpdating(prev => ({ ...prev, [idx]: true }));
+      const newStatus = !todo.completed;
+      await updateSheetCell('Todos', idx + 2, 2, newStatus ? 'TRUE' : 'FALSE');
+      setTodos(prev => prev.map((t, i) => i === idx ? { ...t, completed: newStatus } : t));
     } catch (error) {
-      console.error('Error toggling todo:', error);
+      console.error('Error updating todo status:', error);
     } finally {
-      setTodoUpdating({ ...todoUpdating, [idx]: false });
+      setTodoUpdating(prev => ({ ...prev, [idx]: false }));
     }
   };
 

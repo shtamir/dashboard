@@ -1,5 +1,6 @@
 // src/services/calendar.ts
-import type { CalendarEvent } from '@types';
+import { google } from 'googleapis';
+import { CalendarEvent } from '@types';
 import { getAccessToken } from '@services/auth';
 import { getDateWindow } from '@utils/dateRange';
 import { getSettings } from '@services/settings';   // however you expose setting
@@ -25,54 +26,38 @@ const palette = [
  * `days` from that value and keep the rest unchanged.
  */
 export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
-  const token = await getAccessToken();
-  // Always fetch the next 14 days (2 weeks) from today at local midnight
-  const rangeStart = new Date();
-  rangeStart.setHours(0, 0, 0, 0);
-  const days = 14;
-  const rangeEnd = new Date(rangeStart);
-  rangeEnd.setDate(rangeEnd.getDate() + days);
+  try {
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/calendar.readonly']
+    });
 
-  console.log('Fetching 2-week window:', {
-    start: rangeStart.toLocaleString(),
-    end: rangeEnd.toLocaleString()
-  });
-  console.log('UTC date range:', {
-    start: rangeStart.toISOString(),
-    end: rangeEnd.toISOString()
-  });
+    const calendar = google.calendar({ version: 'v3', auth });
+    const response = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: new Date().toISOString(),
+      maxResults: 10,
+      singleEvents: true,
+      orderBy: 'startTime'
+    });
 
-  // Fetch Google Calendar color palette
-  const colorRes = await fetch('https://www.googleapis.com/calendar/v3/colors', {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-  const colorData = await colorRes.json();
-  const eventColors = colorData.event || {};
-
-  const url =
-    `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events` +
-    `?timeMin=${rangeStart.toISOString()}` +
-    `&timeMax=${rangeEnd.toISOString()}` +
-    `&singleEvents=true&orderBy=startTime`;
-
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-
-  console.log('🗓️ Google Calendar items:', data.items);
-
-  const items: any[] = data.items ?? [];
-
-  return items.map((e: any) => {
-    // Use event color if available, else fallback to a default
-    const colorHex = e.colorId && eventColors[e.colorId]?.background ? eventColors[e.colorId].background : '#4CAF50';
-    return {
-      id: e.id,
-      title: e.summary,
-      start: new Date(e.start.dateTime || e.start.date),
-      end: new Date(e.end.dateTime || e.end.date),
-      color: colorHex,
-      person: e.organizer?.displayName ?? 'family'
-    };
-  });
+    return (response.data.items || []).map(event => ({
+      id: event.id || '',
+      summary: event.summary || '',
+      start: {
+        dateTime: event.start?.dateTime || event.start?.date || '',
+        timeZone: event.start?.timeZone
+      },
+      end: {
+        dateTime: event.end?.dateTime || event.end?.date || '',
+        timeZone: event.end?.timeZone
+      },
+      description: event.description,
+      location: event.location,
+      color: event.colorId,
+      person: event.creator?.displayName
+    }));
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    throw error;
+  }
 }

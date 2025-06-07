@@ -41,7 +41,7 @@ export async function fetchTodos(): Promise<Todo[]> {
   }
 }
 
-async function fetchSheetRows(tabName: string): Promise<string[][]> {
+export async function fetchSheetRows(tabName: string): Promise<string[][]> {
   try {
     const auth = new google.auth.GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
