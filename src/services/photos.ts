@@ -15,7 +15,8 @@ export async function fetchPhotos(accessToken: string): Promise<Photo[]> {
       pageSize: 50
     });
 
-    return (response.data.mediaItems || []).map((item: MediaItem) => ({
+    const mediaItems = response.data.mediaItems || [];
+    return mediaItems.map((item: MediaItem) => ({
       id: item.id || '',
       url: item.baseUrl || '',
       caption: item.description || ''

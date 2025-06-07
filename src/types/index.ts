@@ -1,12 +1,11 @@
 export interface CalendarEvent {
   id: string;
-  summary: string;
-  start: string;
-  end: string;
+  title: string;
+  start: Date;
+  end: Date;
   description?: string;
   location?: string;
-  day?: string;
-  time?: string;
+  color?: string;
 }
 
 export interface Message {
@@ -38,47 +37,81 @@ export interface Photo {
 export interface WeatherData {
   current: {
     temp: number;
-    condition: string;
-    icon: string;
+    feels_like: number;
+    humidity: number;
+    wind_speed: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
   };
   hourly: Array<{
-    time: string;
+    dt: number;
     temp: number;
-    condition: string;
-    icon: string;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
   }>;
   daily: Array<{
-    date: string;
-    temp: number;
-    condition: string;
-    icon: string;
+    dt: number;
+    temp: {
+      min: number;
+      max: number;
+    };
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
   }>;
 }
 
 export interface Translations {
-  en: {
-    [key: string]: string;
-  };
-  he: {
+  [key: string]: {
     [key: string]: string;
   };
 }
 
 export interface CalendarState {
   events: CalendarEvent[];
-  startDate: string;
-  days: number;
+  loading: boolean;
+  error: string | null;
 }
 
 export interface WeatherResponse {
-  list: Array<{
+  current: {
+    temp: number;
+    feels_like: number;
+    humidity: number;
+    wind_speed: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
+  };
+  hourly: Array<{
     dt: number;
-    main: {
-      temp: number;
+    temp: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
+  }>;
+  daily: Array<{
+    dt: number;
+    temp: {
+      min: number;
+      max: number;
     };
     weather: Array<{
-      id: number;
       main: string;
+      description: string;
+      icon: string;
     }>;
   }>;
 }

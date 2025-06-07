@@ -6,6 +6,17 @@ const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY;
 const CITY = 'Tel Aviv';
 const COUNTRY = 'IL';
 
+interface WeatherItem {
+  dt: number;
+  main: {
+    temp: number;
+  };
+  weather: Array<{
+    id: number;
+    main: string;
+  }>;
+}
+
 export const fetchWeather = async (): Promise<WeatherData> => {
   try {
     const response = await axios.get<WeatherResponse>(
@@ -18,7 +29,7 @@ export const fetchWeather = async (): Promise<WeatherData> => {
       icon: getWeatherIcon(response.data.list[0].weather[0].id)
     };
 
-    const hourly = response.data.list.slice(0, 8).map((item) => ({
+    const hourly = response.data.list.slice(0, 8).map((item: WeatherItem) => ({
       time: new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric' }),
       temp: Math.round(item.main.temp),
       condition: item.weather[0].main,
@@ -26,9 +37,9 @@ export const fetchWeather = async (): Promise<WeatherData> => {
     }));
 
     const daily = response.data.list
-      .filter((_, index) => index % 8 === 0)
+      .filter((_: WeatherItem, index: number) => index % 8 === 0)
       .slice(0, 5)
-      .map((item) => ({
+      .map((item: WeatherItem) => ({
         date: new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
         temp: Math.round(item.main.temp),
         condition: item.weather[0].main,

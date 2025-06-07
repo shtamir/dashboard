@@ -9,7 +9,8 @@ export default defineConfig({
     alias: {
       '@components': resolve(__dirname, 'src/components'),
       '@services': resolve(__dirname, 'src/services'),
-      '@utils': resolve(__dirname, 'src/utils')
+      '@utils': resolve(__dirname, 'src/utils'),
+      '@types': resolve(__dirname, 'src/types')
     }
   },
   server: { port: 5173 }
