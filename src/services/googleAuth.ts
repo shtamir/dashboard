@@ -15,6 +15,8 @@ declare global {
             error_callback?: (error: { type: string }) => void;
             privacy_policy_url?: string;
             terms_of_service_url?: string;
+            popup_type?: string;
+            state?: string;
           }) => TokenClient;
           revoke: (token: string, callback: () => void) => void;
         };
@@ -31,7 +33,7 @@ interface TokenResponse {
 
 type TokenClient = {
   callback: (response: TokenResponse) => void;
-  requestAccessToken: (config?: { prompt: string; hint?: string }) => void;
+  requestAccessToken: (config?: { prompt: string; hint?: string; popup_type?: string }) => void;
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -99,7 +101,10 @@ export async function signInWithGoogle(): Promise<string> {
       },
       // Add privacy policy and terms of service URLs
       privacy_policy_url: `${window.location.origin}/privacy`,
-      terms_of_service_url: `${window.location.origin}/terms`
+      terms_of_service_url: `${window.location.origin}/terms`,
+      // Add COOP handling
+      popup_type: 'redirect',
+      state: window.location.origin
     });
   }
 
@@ -125,9 +130,11 @@ export async function signInWithGoogle(): Promise<string> {
     };
     
     try {
+      // Use redirect flow instead of popup
       tokenClient!.requestAccessToken({ 
         prompt: 'consent',
-        hint: window.location.origin // Add the current origin as a hint
+        hint: window.location.origin,
+        popup_type: 'redirect'
       });
     } catch (err) {
       console.error('Failed to request access token:', err);
