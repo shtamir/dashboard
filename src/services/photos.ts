@@ -1,6 +1,6 @@
 // src/services/photos.ts
 import { google } from 'googleapis';
-import { Photo, MediaItem } from '../types';
+import { Photo, MediaItem } from '@types';
 
 const ALBUM_ID = import.meta.env.VITE_PHOTOS_ALBUM_ID;
 
@@ -16,7 +16,7 @@ export async function fetchPhotos(accessToken: string): Promise<Photo[]> {
     });
 
     const mediaItems = response.data.mediaItems || [];
-    return mediaItems.map((item: any) => ({
+    return mediaItems.map((item: MediaItem) => ({
       id: item.id || '',
       url: item.baseUrl || '',
       caption: item.description || ''

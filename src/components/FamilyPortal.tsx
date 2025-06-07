@@ -11,12 +11,14 @@ import { signInWithGoogle } from '@services/googleAuth';
 import { fetchCalendarEvents } from '@services/calendar';
 import { fetchWeather } from '@services/weather';
 import { fetchMessages, fetchTodos, fetchSheetRows, updateSheetCell } from '@services/sheets';
-import { CalendarEvent, Message, Todo, WeatherData, Photo, Translations } from '../types';
+import { fetchPhotos } from '@services/photos';
+import { CalendarEvent, Message, Todo, WeatherData, Photo, Translations } from '@types';
 import { getDateWindow, ViewMode } from '@utils/dateRange';
 import { getAccessToken } from '@services/auth';
 import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
 import { detectDeviceType } from '@utils/device';
+import { format } from 'date-fns';
 
 // Add this type declaration at the top of the file (or in a global.d.ts if you prefer)
 declare global {

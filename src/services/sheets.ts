@@ -1,6 +1,6 @@
 // src/services/sheets.ts
 import { google } from 'googleapis';
-import { Message, Todo, SheetsResponse } from '../types';
+import { Message, Todo } from '@types';
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID;
 
@@ -13,7 +13,7 @@ export const fetchMessages = async (accessToken: string): Promise<Message[]> => 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEETS_ID,
       range: 'Messages!A2:E',
-    }) as { data: SheetsResponse['data'] };
+    });
 
     return (response.data.values || []).map((row: string[]) => ({
       id: parseInt(row[0], 10),
@@ -38,7 +38,7 @@ export const fetchTodos = async (accessToken: string): Promise<Todo[]> => {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEETS_ID,
       range: 'Todos!A2:G',
-    }) as { data: SheetsResponse['data'] };
+    });
 
     return (response.data.values || []).map((row: string[]) => ({
       id: parseInt(row[0], 10),
@@ -65,7 +65,7 @@ export const fetchSheetRows = async (tabName: string, accessToken: string): Prom
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEETS_ID,
       range: `${tabName}!A:Z`,
-    }) as { data: SheetsResponse['data'] };
+    });
 
     return response.data.values || [];
   } catch (error) {

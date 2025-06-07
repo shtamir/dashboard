@@ -1,6 +1,6 @@
 // src/services/weather.ts
 import axios from 'axios';
-import { WeatherData, WeatherResponse } from '../types';
+import { WeatherData, WeatherResponse } from '@types';
 
 const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY;
 const CITY = 'Tel Aviv';
@@ -20,12 +20,12 @@ export async function fetchWeather(): Promise<WeatherData> {
         wind_speed: response.data.current.wind_speed,
         weather: response.data.current.weather
       },
-      hourly: response.data.hourly.map(hour => ({
+      hourly: response.data.hourly.map((hour: WeatherResponse['hourly'][0]) => ({
         dt: hour.dt,
         temp: hour.temp,
         weather: hour.weather
       })),
-      daily: response.data.daily.map(day => ({
+      daily: response.data.daily.map((day: WeatherResponse['daily'][0]) => ({
         dt: day.dt,
         temp: {
           min: day.temp.min,

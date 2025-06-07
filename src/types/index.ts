@@ -1,37 +1,39 @@
 export interface CalendarEvent {
   id: string;
-  title: string;
-  start: Date;
-  end: Date;
+  summary: string;
+  start: {
+    dateTime: string;
+    timeZone: string;
+  };
+  end: {
+    dateTime: string;
+    timeZone: string;
+  };
   description?: string;
   location?: string;
-  color?: string;
+  person?: string;
 }
 
 export interface Message {
-  id: number;
+  id: string;
   text: string;
-  from: string;
-  priority: 'high' | 'medium' | 'low';
-  timestamp?: string;
-  author?: string;
+  timestamp: string;
+  author: string;
 }
 
 export interface Todo {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
-  task?: string;
-  assignedTo?: string;
-  dueDate?: string;
-  priority?: 'high' | 'medium' | 'low';
-  category?: string;
+  timestamp: string;
 }
 
 export interface Photo {
   id: string;
   url: string;
   caption?: string;
+  title?: string;
+  timestamp?: string;
 }
 
 export interface WeatherData {
@@ -41,89 +43,41 @@ export interface WeatherData {
     humidity: number;
     wind_speed: number;
     weather: Array<{
+      id: number;
       main: string;
       description: string;
       icon: string;
     }>;
   };
-  hourly: Array<{
-    dt: number;
-    temp: number;
-    weather: Array<{
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-  }>;
   daily: Array<{
     dt: number;
     temp: {
+      day: number;
       min: number;
       max: number;
     };
     weather: Array<{
+      id: number;
       main: string;
       description: string;
       icon: string;
     }>;
   }>;
-}
-
-export interface Translations {
-  [key: string]: {
-    [key: string]: string;
-  };
-}
-
-export interface CalendarState {
-  events: CalendarEvent[];
-  loading: boolean;
-  error: string | null;
 }
 
 export interface WeatherResponse {
-  current: {
-    temp: number;
-    feels_like: number;
-    humidity: number;
-    wind_speed: number;
-    weather: Array<{
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-  };
-  hourly: Array<{
-    dt: number;
-    temp: number;
-    weather: Array<{
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-  }>;
-  daily: Array<{
-    dt: number;
-    temp: {
-      min: number;
-      max: number;
-    };
-    weather: Array<{
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-  }>;
+  data: WeatherData;
 }
 
 export interface SheetsResponse {
-  data: {
-    values?: string[][];
-  };
+  values: string[][];
 }
 
 export interface MediaItem {
-  id?: string;
-  baseUrl?: string;
-  description?: string;
+  id: string;
+  baseUrl: string;
+  filename: string;
+  mediaMetadata?: {
+    creationTime?: string;
+  };
 } 
