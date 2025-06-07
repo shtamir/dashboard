@@ -1,106 +1,89 @@
 // src/services/sheets.ts
 import { google } from 'googleapis';
-import { Message, Todo } from '@types';
+import { Message, Todo, SheetsResponse } from '@types';
 
 const SHEETS_ID = import.meta.env.VITE_SHEETS_ID;
 
-export const fetchMessages = async (accessToken: string): Promise<Message[]> => {
+export async function fetchMessages(): Promise<Message[]> {
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEETS_ID,
-      range: 'Messages!A2:E',
-    });
-
-    return (response.data.values || []).map((row: string[]) => ({
-      id: parseInt(row[0], 10),
-      text: row[1],
-      from: row[2],
-      priority: row[3] as 'high' | 'medium' | 'low',
-      timestamp: row[4] || new Date().toISOString(),
-      author: row[2]
+    const rows = await fetchSheetRows('Messages');
+    return rows.map((row, index) => ({
+      id: index + 1,
+      text: row[0] || '',
+      from: row[1] || '',
+      priority: (row[2] as 'high' | 'medium' | 'low') || 'medium',
+      timestamp: row[3] || new Date().toISOString(),
+      author: row[4] || 'Unknown'
     }));
   } catch (error) {
     console.error('Error fetching messages:', error);
-    return [];
+    throw error;
   }
-};
+}
 
-export const fetchTodos = async (accessToken: string): Promise<Todo[]> => {
+export async function fetchTodos(): Promise<Todo[]> {
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
-
-    const sheets = google.sheets({ version: 'v4', auth });
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SHEETS_ID,
-      range: 'Todos!A2:G',
-    });
-
-    return (response.data.values || []).map((row: string[]) => ({
-      id: parseInt(row[0], 10),
-      text: row[1],
-      completed: row[2] === 'TRUE',
-      task: row[3] || row[1],
-      assignedTo: row[4] || 'Family',
-      dueDate: row[5] || new Date().toISOString(),
-      priority: (row[6] as 'high' | 'medium' | 'low') || 'medium',
-      category: row[7] || 'General'
+    const rows = await fetchSheetRows('Todos');
+    return rows.map((row, index) => ({
+      id: index + 1,
+      text: row[0] || '',
+      completed: row[1] === 'TRUE',
+      task: row[2] || '',
+      assignedTo: row[3] || '',
+      dueDate: row[4] || '',
+      priority: (row[5] as 'high' | 'medium' | 'low') || 'medium',
+      category: row[6] || '',
+      timestamp: row[7] || new Date().toISOString()
     }));
   } catch (error) {
     console.error('Error fetching todos:', error);
-    return [];
+    throw error;
   }
-};
+}
 
-export const fetchSheetRows = async (tabName: string, accessToken: string): Promise<string[][]> => {
+async function fetchSheetRows(tabName: string): Promise<string[][]> {
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    });
 
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SHEETS_ID,
-      range: `${tabName}!A:Z`,
+      range: `${tabName}!A:H`
     });
 
     return response.data.values || [];
   } catch (error) {
-    console.error('Error fetching sheet rows:', error);
-    return [];
+    console.error(`Error fetching sheet rows from ${tabName}:`, error);
+    throw error;
   }
-};
+}
 
-export const updateSheetCell = async (
-  tab: string,
-  rowIndex: number,
-  colIndex: number,
-  value: string,
-  accessToken: string
-): Promise<void> => {
+export async function updateSheetCell(
+  tabName: string,
+  cell: string,
+  value: string
+): Promise<void> {
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
+    });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const range = `${tab}!${columnToLetter(colIndex + 1)}${rowIndex + 1}`;
-    
     await sheets.spreadsheets.values.update({
       spreadsheetId: SHEETS_ID,
-      range,
-      valueInputOption: 'USER_ENTERED',
+      range: `${tabName}!${cell}`,
+      valueInputOption: 'RAW',
       requestBody: {
         values: [[value]]
       }
     });
   } catch (error) {
-    console.error('Error updating sheet cell:', error);
+    console.error(`Error updating sheet cell ${cell} in ${tabName}:`, error);
     throw error;
   }
-};
+}
 
 function columnToLetter(col: number): string {
   let temp: number;

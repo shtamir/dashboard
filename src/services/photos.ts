@@ -4,25 +4,27 @@ import { Photo, MediaItem } from '@types';
 
 const ALBUM_ID = import.meta.env.VITE_PHOTOS_ALBUM_ID;
 
-export async function fetchPhotos(accessToken: string): Promise<Photo[]> {
+export async function fetchPhotos(): Promise<Photo[]> {
   try {
-    const auth = new google.auth.OAuth2();
-    auth.setCredentials({ access_token: accessToken });
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/photoslibrary.readonly']
+    });
 
     const photos = google.photoslibrary({ version: 'v1', auth });
     const response = await photos.mediaItems.list({
       albumId: ALBUM_ID,
-      pageSize: 50
+      pageSize: 100
     });
 
-    const mediaItems = response.data.mediaItems || [];
-    return mediaItems.map((item: MediaItem) => ({
-      id: item.id || '',
-      url: item.baseUrl || '',
-      caption: item.description || ''
+    return (response.data.mediaItems || []).map((item: MediaItem) => ({
+      id: item.id,
+      url: item.baseUrl,
+      caption: item.description || '',
+      title: item.filename,
+      timestamp: item.mediaMetadata?.creationTime
     }));
   } catch (error) {
     console.error('Error fetching photos:', error);
-    return [];
+    throw error;
   }
 }

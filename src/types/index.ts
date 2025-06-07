@@ -1,30 +1,33 @@
 export interface CalendarEvent {
   id: string;
-  summary: string;
-  start: {
-    dateTime: string;
-    timeZone: string;
-  };
-  end: {
-    dateTime: string;
-    timeZone: string;
-  };
+  title: string;
+  start: Date;
+  end: Date;
   description?: string;
   location?: string;
+  color?: string;
   person?: string;
 }
 
 export interface Message {
-  id: string;
+  id: number;
   text: string;
+  from: string;
+  priority: 'high' | 'medium' | 'low';
   timestamp: string;
   author: string;
+  read?: boolean;
 }
 
 export interface Todo {
-  id: string;
+  id: number;
   text: string;
   completed: boolean;
+  task?: string;
+  assignedTo?: string;
+  dueDate?: string;
+  priority?: 'high' | 'medium' | 'low';
+  category?: string;
   timestamp: string;
 }
 
@@ -33,6 +36,7 @@ export interface Photo {
   url: string;
   caption?: string;
   title?: string;
+  date?: string;
   timestamp?: string;
 }
 
@@ -49,6 +53,15 @@ export interface WeatherData {
       icon: string;
     }>;
   };
+  hourly: Array<{
+    dt: number;
+    temp: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
+  }>;
   daily: Array<{
     dt: number;
     temp: {
@@ -63,10 +76,19 @@ export interface WeatherData {
       icon: string;
     }>;
   }>;
+  temperature?: number;
+  condition?: string;
+  forecast?: any[];
+  threeHourForecast?: any[];
+  sunrise?: string;
+  sunset?: string;
+  dailyForecast?: any[];
 }
 
 export interface WeatherResponse {
-  data: WeatherData;
+  current: WeatherData['current'];
+  hourly: WeatherData['hourly'];
+  daily: WeatherData['daily'];
 }
 
 export interface SheetsResponse {
@@ -77,7 +99,14 @@ export interface MediaItem {
   id: string;
   baseUrl: string;
   filename: string;
+  description?: string;
   mediaMetadata?: {
     creationTime?: string;
+  };
+}
+
+export interface Translations {
+  [key: string]: {
+    [key: string]: string;
   };
 } 
