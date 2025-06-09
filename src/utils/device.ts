@@ -1,5 +1,9 @@
 export function detectDeviceType(): 'tv' | 'mobile' | 'desktop' {
   const ua = navigator.userAgent.toLowerCase();
+
+  const isAndroid = ua.includes('android');
+  const hasMobileToken = /mobile|mobi|touch|mini|windows ce|palm/i.test(ua);
+
   if (
     ua.includes('smart-tv') ||
     ua.includes('smarttv') ||
@@ -16,12 +20,15 @@ export function detectDeviceType(): 'tv' | 'mobile' | 'desktop' {
     ua.includes('dtv') ||
     ua.includes('sonydtv') ||
     ua.includes('hisense') ||
-    (ua.includes('tv') && !ua.includes('mobile'))
+    (ua.includes('tv') && !ua.includes('mobile')) ||
+    (isAndroid && !hasMobileToken)
   ) {
     return 'tv';
   }
-  if (/mobi|android|touch|mini|windows ce|palm/i.test(ua)) {
+
+  if (hasMobileToken || (isAndroid && ua.includes('mobile'))) {
     return 'mobile';
   }
+
   return 'desktop';
-} 
+}
