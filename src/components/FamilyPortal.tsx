@@ -862,6 +862,15 @@ useEffect(() => {
     console.log('[Device Detection] Detected device type:', type);
   }, []);
 
+  // Revive Google auth state from session storage on load
+  useEffect(() => {
+    const token = sessionStorage.getItem('google_token');
+    const exp = sessionStorage.getItem('google_token_exp');
+    if (token && exp && Number(exp) > Date.now()) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const [linkCode, setLinkCode] = useState<string | null>(null);
   const [linkDebug, setLinkDebug] = useState<string | null>(null); // <-- debug info
   const [linkStatus, setLinkStatus] = useState<'pending' | 'linked' | null>(null);
@@ -900,12 +909,15 @@ useEffect(() => {
         }
         const data = await res.json();
         setLinkDebug('Poll response: ' + JSON.stringify(data));
-        
+
         if (data.status === 'linked') {
+          if (data.token && data.expiresAt) {
+            sessionStorage.setItem('google_token', data.token);
+            sessionStorage.setItem('google_token_exp', String(data.expiresAt));
+            setIsAuthenticated(true);
+          }
           setLinkStatus('linked');
           clearInterval(pollInterval);
-          // Reload the page to trigger authentication
-          window.location.reload();
         }
       } catch (err) {
         setLinkDebug('Poll error: ' + err);
@@ -930,7 +942,7 @@ useEffect(() => {
             <div className="text-gray-500">and enter the code above to link this TV.</div>
           </div>
           <div className="text-xs text-gray-400">
-            {linkStatus === 'linked' ? 'Device linked! Reloading...' : 'Waiting for device to be linked…'}
+            {linkStatus === 'linked' ? 'Device linked!' : 'Waiting for device to be linked…'}
           </div>
         </div>
       </div>

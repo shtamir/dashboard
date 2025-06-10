@@ -23,9 +23,23 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'Not found' }),
       };
     }
+
+    const record = codes[code];
+    if (record.status === 'linked') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          status: 'linked',
+          token: record.token,
+          expiresAt: record.expiresAt,
+          user: record.user,
+        }),
+      };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify(codes[code]),
+      body: JSON.stringify({ status: record.status }),
     };
   }
   if (event.httpMethod === 'PUT') {
@@ -59,7 +73,11 @@ exports.handler = async (event) => {
       const userInfo = await resp.json();
       // userInfo contains fields like email, sub (user id), etc.
 
+      const expiresIn = Number(userInfo.expires_in || 3600);
+
       codes[code].status = 'linked';
+      codes[code].token = token;
+      codes[code].expiresAt = Date.now() + expiresIn * 1000;
       codes[code].user = {
         email: userInfo.email,
         sub: userInfo.sub,
