@@ -656,15 +656,16 @@ useEffect(() => {
         date: item.mediaMetadata?.creationTime ? new Date(item.mediaMetadata.creationTime) : undefined
       })));
     } catch (err: any) {
-      setPhotosError('Failed to fetch photos. Please try again.');
+      // Fallback to default photo when the album fails to load
       console.error('Failed to fetch Google Photos:', err);
-      // Fallback to default photo
-      setPhotos([{
-        id: 'default',
-        url: defaultPhoto,
-        title: 'Default Photo',
-        date: new Date()
-      }]);
+      setPhotos([
+        {
+          id: 'default',
+          url: defaultPhoto,
+          title: 'Default Photo',
+          date: new Date(),
+        },
+      ]);
     } finally {
       setPhotosLoading(false);
     }
@@ -1312,7 +1313,11 @@ useEffect(() => {
                   <span className="text-gray-500 dark:text-gray-400">Loading photos...</span>
                 </div>
               ) : photosError ? (
-                <div className="text-red-500 dark:text-red-400 text-center w-full">{photosError}</div>
+                <img
+                  src={defaultPhoto}
+                  alt="Default"
+                  className="w-full h-full object-cover rounded-xl"
+                />
               ) : photos.length > 0 ? (
                 <img
                   src={photos[currentPhotoIndex].url}
@@ -1320,9 +1325,11 @@ useEffect(() => {
                   className="w-full h-full object-cover rounded-xl"
                 />
               ) : (
-                <div className="text-gray-400 dark:text-gray-500">
-                  {t.noPhotos}
-                </div>
+                <img
+                  src={defaultPhoto}
+                  alt="Default"
+                  className="w-full h-full object-cover rounded-xl"
+                />
               )}
             </div>
             {/* Slideshow Controls */}
