@@ -18,6 +18,8 @@ import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
 import { detectDeviceType } from '@utils/device';
 
+const LOCAL_SETTINGS_KEY = 'family-portal-settings';
+
 // Add this type declaration at the top of the file (or in a global.d.ts if you prefer)
 declare global {
   interface ImportMeta {
@@ -59,6 +61,18 @@ const FamilyPortal = () => {
     messagesCount: 3,
     todosCount: 9
   });
+
+  // Load saved settings if available
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_SETTINGS_KEY);
+      if (stored) {
+        setSettings(prev => ({ ...prev, ...JSON.parse(stored) }));
+      }
+    } catch (err) {
+      console.error('Error loading saved settings', err);
+    }
+  }, []);
   
   // Data state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -120,6 +134,7 @@ const FamilyPortal = () => {
       refreshInterval: 'Refresh Interval',
       minutes: 'minutes',
       saveSettings: 'Save Settings',
+      saveDefaults: 'Save Defaults',
       cancel: 'Cancel',
       loading: 'Loading...',
       hoursForecast: 'Hourly Forecast',
@@ -175,6 +190,7 @@ const FamilyPortal = () => {
       refreshInterval: 'מרווח רענון',
       minutes: 'דקות',
       saveSettings: 'שמור הגדרות',
+      saveDefaults: 'שמור כברירת מחדל',
       cancel: 'ביטול',
       loading: 'טוען...',
       hoursForecast: 'תחזית שעתית',
@@ -384,6 +400,15 @@ useEffect(() => {
     } else {
       alert(t.wrongPassword);
     }
+  };
+
+  const handleSaveDefaults = () => {
+    try {
+      localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (err) {
+      console.error('Error saving settings', err);
+    }
+    setShowSettings(false);
   };
 
   const toggleTodo = (id: number): void => {
@@ -1738,6 +1763,12 @@ useEffect(() => {
                 className="flex-1 px-6 py-4 text-lg text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-all"
               >
                 {t.cancel}
+              </button>
+              <button
+                onClick={handleSaveDefaults}
+                className="flex-1 px-6 py-4 text-lg bg-green-600 text-white rounded-xl hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-all font-medium"
+              >
+                {t.saveDefaults}
               </button>
               <button
                 onClick={() => setShowSettings(false)}
