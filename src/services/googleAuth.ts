@@ -44,13 +44,13 @@ const TOKEN_KEY = 'google_token';
 const EXP_KEY   = 'google_token_exp';          // millis-since-epoch
 
 function saveToken(token: string, expiresAt: number) {
-  sessionStorage.setItem(TOKEN_KEY, token);
-  sessionStorage.setItem(EXP_KEY,  expiresAt.toString());
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(EXP_KEY,  expiresAt.toString());
 }
 
 function loadToken(): { token: string; expiresAt: number } | null {
-  const t = sessionStorage.getItem(TOKEN_KEY);
-  const e = sessionStorage.getItem(EXP_KEY);
+  const t = localStorage.getItem(TOKEN_KEY);
+  const e = localStorage.getItem(EXP_KEY);
   return t && e ? { token: t, expiresAt: Number(e) } : null;
 }
 
@@ -66,7 +66,7 @@ let tokenClient: TokenClient | null = null;
 let cachedAccessToken = '';
 let tokenExpiresAt = 0;                         // millis
 
-// On page reload, revive prior token if still fresh
+// On page reload, revive prior token from local storage if still fresh
 const cached = loadToken();
 if (cached && cached.expiresAt > Date.now()) {
   cachedAccessToken = cached.token;
@@ -171,8 +171,8 @@ export function revokeGoogleToken() {
   window.google.accounts.oauth2.revoke(cachedAccessToken, () => {});
   cachedAccessToken = '';
   tokenExpiresAt = 0;
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(EXP_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(EXP_KEY);
 }
 
 // ––– helper –––
