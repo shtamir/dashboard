@@ -888,10 +888,10 @@ useEffect(() => {
     console.log('[Device Detection] Detected device type:', type);
   }, []);
 
-  // Revive Google auth state from session storage on load
+  // Revive Google auth state from local storage on load
   useEffect(() => {
-    const token = sessionStorage.getItem('google_token');
-    const exp = sessionStorage.getItem('google_token_exp');
+    const token = localStorage.getItem('google_token');
+    const exp = localStorage.getItem('google_token_exp');
     if (token && exp && Number(exp) > Date.now()) {
       setIsAuthenticated(true);
     }
@@ -938,8 +938,8 @@ useEffect(() => {
 
         if (data.status === 'linked') {
           if (data.token && data.expiresAt) {
-            sessionStorage.setItem('google_token', data.token);
-            sessionStorage.setItem('google_token_exp', String(data.expiresAt));
+            localStorage.setItem('google_token', data.token);
+            localStorage.setItem('google_token_exp', String(data.expiresAt));
             setIsAuthenticated(true);
           }
           setLinkStatus('linked');
