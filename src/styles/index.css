@@ -9,3 +9,39 @@ html.rtl {
 html.ltr {
   direction: ltr;
 }
+
+/* Invisible keep-alive pixel */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  background: #000;
+  pointer-events: none;
+  animation: nudge 5s linear infinite;
+}
+
+@keyframes nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(1px);
+  }
+}
+
+#dashboard {
+  animation: drift 60s linear infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translate(-3px, -3px);
+  }
+  to {
+    transform: translate(3px, 3px);
+  }
+}
