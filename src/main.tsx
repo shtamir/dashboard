@@ -9,3 +9,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 );
+
+document.addEventListener('visibilitychange', () => {
+  const el = document.getElementById('dashboard');
+  if (el) {
+    el.style.animationPlayState = document.hidden ? 'paused' : 'running';
+  }
+});
