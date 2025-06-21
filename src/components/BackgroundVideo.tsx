@@ -1,46 +1,52 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import bgVideo from '../assets/videos/bg.mp4';
 
-const INACTIVITY_TIMEOUT = 30000; // 30 seconds
-const KEEP_AWAKE_INTERVAL = 60000; // periodically bring video forward
-const KEEP_AWAKE_DURATION = 3000; // how long to keep it in front
+const INACTIVITY_TIMEOUT = 30000; // ms until video briefly moves to front
+const KEEP_AWAKE_INTERVAL = 60000; // periodic interval to show video
+const FRONT_DURATION = 3000; // how long to keep video in front
 
 const BackgroundVideo: React.FC = () => {
-  const [isFront, setIsFront] = useState(true);
-  const timerRef = useRef<number>();
+  const [isFront, setIsFront] = useState(false);
+  const inactivityTimer = useRef<number>();
+  const hideTimer = useRef<number>();
+  const keepAwakeInterval = useRef<number>();
+
+  const showTemporarily = () => {
+    setIsFront(true);
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+    }
+    hideTimer.current = window.setTimeout(() => setIsFront(false), FRONT_DURATION);
+  };
+
+  const resetInactivityTimer = () => {
+    if (inactivityTimer.current) {
+      clearTimeout(inactivityTimer.current);
+    }
+    inactivityTimer.current = window.setTimeout(showTemporarily, INACTIVITY_TIMEOUT);
+  };
 
   useEffect(() => {
+    resetInactivityTimer();
     const handleActivity = () => {
       setIsFront(false);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      timerRef.current = window.setTimeout(() => setIsFront(true), INACTIVITY_TIMEOUT);
+      resetInactivityTimer();
     };
-
     const events = ['keydown', 'mousedown', 'touchstart', 'mousemove'];
     events.forEach(evt => window.addEventListener(evt, handleActivity));
 
+    keepAwakeInterval.current = window.setInterval(showTemporarily, KEEP_AWAKE_INTERVAL);
+
     return () => {
       events.forEach(evt => window.removeEventListener(evt, handleActivity));
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
       }
-    };
-  }, []);
-
-  // Periodically bring the video to the front to keep the screen awake
-  useEffect(() => {
-    let hideTimeout: number | undefined;
-    const interval = window.setInterval(() => {
-      setIsFront(true);
-      hideTimeout = window.setTimeout(() => setIsFront(false), KEEP_AWAKE_DURATION);
-    }, KEEP_AWAKE_INTERVAL);
-
-    return () => {
-      clearInterval(interval);
-      if (hideTimeout) {
-        clearTimeout(hideTimeout);
+      if (hideTimer.current) {
+        clearTimeout(hideTimer.current);
+      }
+      if (keepAwakeInterval.current) {
+        clearInterval(keepAwakeInterval.current);
       }
     };
   }, []);
@@ -50,7 +56,6 @@ const BackgroundVideo: React.FC = () => {
       src={bgVideo}
       autoPlay
       loop
-      // muted - try unmuted
       style={{
         position: 'fixed',
         top: 0,
