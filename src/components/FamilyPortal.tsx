@@ -17,6 +17,7 @@ import { getAccessToken } from '@services/auth';
 import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
 import { detectDeviceType } from '@utils/device';
+import { APP_VERSION } from '@utils/version';
 
 const LOCAL_SETTINGS_KEY = 'family-portal-settings';
 
@@ -1783,6 +1784,9 @@ useEffect(() => {
               >
                 {t.saveSettings}
               </button>
+            </div>
+            <div className="mt-4 text-center text-gray-500 text-sm">
+              Version {APP_VERSION}
             </div>
           </div>
         </div>

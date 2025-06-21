@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import bgVideo from '../assets/videos/bg.mp4';
 
 const INACTIVITY_TIMEOUT = 30000; // 30 seconds
+const KEEP_AWAKE_INTERVAL = 60000; // periodically bring video forward
+const KEEP_AWAKE_DURATION = 3000; // how long to keep it in front
 
 const BackgroundVideo: React.FC = () => {
   const [isFront, setIsFront] = useState(true);
@@ -26,12 +29,28 @@ const BackgroundVideo: React.FC = () => {
     };
   }, []);
 
+  // Periodically bring the video to the front to keep the screen awake
+  useEffect(() => {
+    let hideTimeout: number | undefined;
+    const interval = window.setInterval(() => {
+      setIsFront(true);
+      hideTimeout = window.setTimeout(() => setIsFront(false), KEEP_AWAKE_DURATION);
+    }, KEEP_AWAKE_INTERVAL);
+
+    return () => {
+      clearInterval(interval);
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+      }
+    };
+  }, []);
+
   return (
     <video
-      src="/src/assets/videos/bg.mp4"
+      src={bgVideo}
       autoPlay
       loop
-      muted
+      // muted - try unmuted
       style={{
         position: 'fixed',
         top: 0,
