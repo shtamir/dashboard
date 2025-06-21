@@ -1,16 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import bgVideo from '../assets/videos/bg.mp4';
 
-const INACTIVITY_TIMEOUT = 30000; // ms until video briefly moves to front
-const KEEP_AWAKE_INTERVAL = 60000; // periodic interval to show video
-const FRONT_DURATION = 3000; // how long to keep video in front
+const INACTIVITY_TIMEOUT = 30000; // ms of inactivity before showing video
+const FRONT_DURATION = 10000; // how long to keep video in front
 
 const BackgroundVideo: React.FC = () => {
   const [isFront, setIsFront] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inactivityTimer = useRef<number>();
   const hideTimer = useRef<number>();
-  const keepAwakeInterval = useRef<number>();
 
   const showTemporarily = () => {
     setIsFront(true);
@@ -45,8 +43,6 @@ const BackgroundVideo: React.FC = () => {
     const events = ['keydown', 'mousedown', 'touchstart', 'mousemove'];
     events.forEach(evt => window.addEventListener(evt, handleActivity));
 
-    keepAwakeInterval.current = window.setInterval(showTemporarily, KEEP_AWAKE_INTERVAL);
-
     return () => {
       events.forEach(evt => window.removeEventListener(evt, handleActivity));
       if (inactivityTimer.current) {
@@ -54,9 +50,6 @@ const BackgroundVideo: React.FC = () => {
       }
       if (hideTimer.current) {
         clearTimeout(hideTimer.current);
-      }
-      if (keepAwakeInterval.current) {
-        clearInterval(keepAwakeInterval.current);
       }
     };
   }, []);
@@ -77,7 +70,7 @@ const BackgroundVideo: React.FC = () => {
         height: '100%',
         objectFit: 'cover',
         pointerEvents: 'none',
-        zIndex: isFront ? 50 : 0,
+        zIndex: isFront ? 0 : -1,
       }}
     />
   );
