@@ -6,3 +6,4 @@ dist/
 .DS_Store
 .vscode/
 .netlify
+git_log.txt
