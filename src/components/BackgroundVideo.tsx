@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const INACTIVITY_TIMEOUT = 30000; // 30 seconds
+const KEEP_AWAKE_INTERVAL = 60000; // periodically bring video forward
+const KEEP_AWAKE_DURATION = 3000; // how long to keep it in front
 
 const BackgroundVideo: React.FC = () => {
   const [isFront, setIsFront] = useState(true);
@@ -22,6 +24,22 @@ const BackgroundVideo: React.FC = () => {
       events.forEach(evt => window.removeEventListener(evt, handleActivity));
       if (timerRef.current) {
         clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  // Periodically bring the video to the front to keep the screen awake
+  useEffect(() => {
+    let hideTimeout: number | undefined;
+    const interval = window.setInterval(() => {
+      setIsFront(true);
+      hideTimeout = window.setTimeout(() => setIsFront(false), KEEP_AWAKE_DURATION);
+    }, KEEP_AWAKE_INTERVAL);
+
+    return () => {
+      clearInterval(interval);
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
       }
     };
   }, []);
