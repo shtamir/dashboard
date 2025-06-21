@@ -18,6 +18,8 @@ import defaultPhoto from '../assets/images/default.jpg';
 import { signOut as googleSignOut } from '@services/auth';
 import { detectDeviceType } from '@utils/device';
 
+const LOCAL_SETTINGS_KEY = 'family-portal-settings';
+
 // Add this type declaration at the top of the file (or in a global.d.ts if you prefer)
 declare global {
   interface ImportMeta {
@@ -59,6 +61,18 @@ const FamilyPortal = () => {
     messagesCount: 3,
     todosCount: 9
   });
+
+  // Load saved settings if available
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_SETTINGS_KEY);
+      if (stored) {
+        setSettings(prev => ({ ...prev, ...JSON.parse(stored) }));
+      }
+    } catch (err) {
+      console.error('Error loading saved settings', err);
+    }
+  }, []);
   
   // Data state
   const [messages, setMessages] = useState<Message[]>([]);
@@ -120,6 +134,7 @@ const FamilyPortal = () => {
       refreshInterval: 'Refresh Interval',
       minutes: 'minutes',
       saveSettings: 'Save Settings',
+      saveDefaults: 'Save Defaults',
       cancel: 'Cancel',
       loading: 'Loading...',
       hoursForecast: 'Hourly Forecast',
@@ -175,6 +190,7 @@ const FamilyPortal = () => {
       refreshInterval: 'מרווח רענון',
       minutes: 'דקות',
       saveSettings: 'שמור הגדרות',
+      saveDefaults: 'שמור כברירת מחדל',
       cancel: 'ביטול',
       loading: 'טוען...',
       hoursForecast: 'תחזית שעתית',
@@ -384,6 +400,15 @@ useEffect(() => {
     } else {
       alert(t.wrongPassword);
     }
+  };
+
+  const handleSaveDefaults = () => {
+    try {
+      localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (err) {
+      console.error('Error saving settings', err);
+    }
+    setShowSettings(false);
   };
 
   const toggleTodo = (id: number): void => {
@@ -656,15 +681,16 @@ useEffect(() => {
         date: item.mediaMetadata?.creationTime ? new Date(item.mediaMetadata.creationTime) : undefined
       })));
     } catch (err: any) {
-      setPhotosError('Failed to fetch photos. Please try again.');
+      // Fallback to default photo when the album fails to load
       console.error('Failed to fetch Google Photos:', err);
-      // Fallback to default photo
-      setPhotos([{
-        id: 'default',
-        url: defaultPhoto,
-        title: 'Default Photo',
-        date: new Date()
-      }]);
+      setPhotos([
+        {
+          id: 'default',
+          url: defaultPhoto,
+          title: 'Default Photo',
+          date: new Date(),
+        },
+      ]);
     } finally {
       setPhotosLoading(false);
     }
@@ -862,6 +888,15 @@ useEffect(() => {
     console.log('[Device Detection] Detected device type:', type);
   }, []);
 
+  // Revive Google auth state from local storage on load
+  useEffect(() => {
+    const token = localStorage.getItem('google_token');
+    const exp = localStorage.getItem('google_token_exp');
+    if (token && exp && Number(exp) > Date.now()) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   const [linkCode, setLinkCode] = useState<string | null>(null);
   const [linkDebug, setLinkDebug] = useState<string | null>(null); // <-- debug info
   const [linkStatus, setLinkStatus] = useState<'pending' | 'linked' | null>(null);
@@ -900,12 +935,15 @@ useEffect(() => {
         }
         const data = await res.json();
         setLinkDebug('Poll response: ' + JSON.stringify(data));
-        
+
         if (data.status === 'linked') {
+          if (data.token && data.expiresAt) {
+            localStorage.setItem('google_token', data.token);
+            localStorage.setItem('google_token_exp', String(data.expiresAt));
+            setIsAuthenticated(true);
+          }
           setLinkStatus('linked');
           clearInterval(pollInterval);
-          // Reload the page to trigger authentication
-          window.location.reload();
         }
       } catch (err) {
         setLinkDebug('Poll error: ' + err);
@@ -930,7 +968,7 @@ useEffect(() => {
             <div className="text-gray-500">and enter the code above to link this TV.</div>
           </div>
           <div className="text-xs text-gray-400">
-            {linkStatus === 'linked' ? 'Device linked! Reloading...' : 'Waiting for device to be linked…'}
+            {linkStatus === 'linked' ? 'Device linked!' : 'Waiting for device to be linked…'}
           </div>
         </div>
       </div>
@@ -984,10 +1022,6 @@ useEffect(() => {
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 ${isRTL ? 'rtl' : 'ltr'}`}>
 
-    {/* DEBUG – remove later */}
-<pre style={{fontSize: '10px', background: '#0008', color: '#0f0', maxHeight: 120, overflow: 'auto'}}>
-  {JSON.stringify(calendarEvents /* or events */, null, 2)}
-</pre>
 
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-8 py-4">
@@ -1304,7 +1338,11 @@ useEffect(() => {
                   <span className="text-gray-500 dark:text-gray-400">Loading photos...</span>
                 </div>
               ) : photosError ? (
-                <div className="text-red-500 dark:text-red-400 text-center w-full">{photosError}</div>
+                <img
+                  src={defaultPhoto}
+                  alt="Default"
+                  className="w-full h-full object-cover rounded-xl"
+                />
               ) : photos.length > 0 ? (
                 <img
                   src={photos[currentPhotoIndex].url}
@@ -1312,9 +1350,11 @@ useEffect(() => {
                   className="w-full h-full object-cover rounded-xl"
                 />
               ) : (
-                <div className="text-gray-400 dark:text-gray-500">
-                  {t.noPhotos}
-                </div>
+                <img
+                  src={defaultPhoto}
+                  alt="Default"
+                  className="w-full h-full object-cover rounded-xl"
+                />
               )}
             </div>
             {/* Slideshow Controls */}
@@ -1730,6 +1770,12 @@ useEffect(() => {
                 className="flex-1 px-6 py-4 text-lg text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-all"
               >
                 {t.cancel}
+              </button>
+              <button
+                onClick={handleSaveDefaults}
+                className="flex-1 px-6 py-4 text-lg bg-green-600 text-white rounded-xl hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-all font-medium"
+              >
+                {t.saveDefaults}
               </button>
               <button
                 onClick={() => setShowSettings(false)}

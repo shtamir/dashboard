@@ -447,10 +447,6 @@ useEffect(() => {
   return (
     <div className={`min-h-screen bg-gray-100 dark:bg-gray-900 ${isRTL ? 'rtl' : 'ltr'}`}>
 
-    {/* DEBUG – remove later */}
-<pre style={{fontSize: '10px', background: '#0008', color: '#0f0', maxHeight: 120, overflow: 'auto'}}>
-  {JSON.stringify(calendarEvents /* or events */, null, 2)}
-</pre>
 
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-8 py-4">
