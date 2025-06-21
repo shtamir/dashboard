@@ -18,7 +18,10 @@ const BackgroundVideo: React.FC = () => {
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
     }
-    hideTimer.current = window.setTimeout(() => setIsFront(false), FRONT_DURATION);
+    hideTimer.current = window.setTimeout(() => {
+      setIsFront(false);
+      resetInactivityTimer();
+    }, FRONT_DURATION);
   };
 
   const resetInactivityTimer = () => {
@@ -34,6 +37,10 @@ const BackgroundVideo: React.FC = () => {
       /* ignore autoplay errors */
     });
     const handleActivity = () => {
+      if (hideTimer.current) {
+        clearTimeout(hideTimer.current);
+        hideTimer.current = undefined;
+      }
       setIsFront(false);
       resetInactivityTimer();
       videoRef.current?.play().catch(() => {
@@ -50,6 +57,7 @@ const BackgroundVideo: React.FC = () => {
       }
       if (hideTimer.current) {
         clearTimeout(hideTimer.current);
+        hideTimer.current = undefined;
       }
     };
   }, []);
