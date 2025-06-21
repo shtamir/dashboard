@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import bgVideo from '../assets/videos/bg.mp4';
 
 const INACTIVITY_TIMEOUT = 30000; // 30 seconds
 const KEEP_AWAKE_INTERVAL = 60000; // periodically bring video forward
@@ -46,7 +47,7 @@ const BackgroundVideo: React.FC = () => {
 
   return (
     <video
-      src="/src/assets/videos/bg.mp4"
+      src={bgVideo}
       autoPlay
       loop
       muted
