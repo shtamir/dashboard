@@ -50,7 +50,7 @@ const BackgroundVideo: React.FC = () => {
       src={bgVideo}
       autoPlay
       loop
-      muted
+      // muted - try unmuted
       style={{
         position: 'fixed',
         top: 0,
