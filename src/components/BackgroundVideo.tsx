@@ -41,6 +41,9 @@ const BackgroundVideo: React.FC = () => {
       videoRef.current?.play().catch(() => {
         /* ignore autoplay errors */
       });
+    const handleActivity = () => {
+      setIsFront(false);
+      resetInactivityTimer();
     };
     const events = ['keydown', 'mousedown', 'touchstart', 'mousemove'];
     events.forEach(evt => window.addEventListener(evt, handleActivity));
