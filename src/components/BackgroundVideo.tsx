@@ -7,12 +7,16 @@ const FRONT_DURATION = 3000; // how long to keep video in front
 
 const BackgroundVideo: React.FC = () => {
   const [isFront, setIsFront] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const inactivityTimer = useRef<number>();
   const hideTimer = useRef<number>();
   const keepAwakeInterval = useRef<number>();
 
   const showTemporarily = () => {
     setIsFront(true);
+    videoRef.current?.play().catch(() => {
+      /* ignore autoplay errors */
+    });
     if (hideTimer.current) {
       clearTimeout(hideTimer.current);
     }
@@ -28,6 +32,15 @@ const BackgroundVideo: React.FC = () => {
 
   useEffect(() => {
     resetInactivityTimer();
+    videoRef.current?.play().catch(() => {
+      /* ignore autoplay errors */
+    });
+    const handleActivity = () => {
+      setIsFront(false);
+      resetInactivityTimer();
+      videoRef.current?.play().catch(() => {
+        /* ignore autoplay errors */
+      });
     const handleActivity = () => {
       setIsFront(false);
       resetInactivityTimer();
@@ -53,9 +66,12 @@ const BackgroundVideo: React.FC = () => {
 
   return (
     <video
+      ref={videoRef}
       src={bgVideo}
       autoPlay
       loop
+      muted
+      playsInline
       style={{
         position: 'fixed',
         top: 0,
