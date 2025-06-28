@@ -21,6 +21,7 @@ const BackgroundVideo: React.FC = () => {
     hideTimer.current = window.setTimeout(() => {
       setIsFront(false);
       resetInactivityTimer();
+      hideTimer.current = undefined;
     }, FRONT_DURATION);
   };
 
@@ -47,7 +48,7 @@ const BackgroundVideo: React.FC = () => {
         /* ignore autoplay errors */
       });
     };
-    const events = ['keydown', 'mousedown', 'touchstart', 'mousemove'];
+    const events = ['keydown', 'mousedown', 'touchstart', 'mousemove', 'pointerdown', 'pointermove'];
     events.forEach(evt => window.addEventListener(evt, handleActivity));
 
     return () => {
