@@ -87,7 +87,6 @@ export async function signInWithGoogle(): Promise<string> {
 
   if (!tokenClient) {
     const currentOrigin = window.location.origin;
-    console.log('Current origin:', currentOrigin); // Debug log
 
     // @ts-ignore
     tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -178,7 +177,6 @@ export function revokeGoogleToken() {
 // ––– helper –––
 function ensureGisLoaded(): Promise<void> {
     // TODO: remove
-    console.log('GIS token ok', cachedAccessToken.slice(0, 10));
   
     // @ts-ignore
   if (window.google?.accounts?.oauth2) return Promise.resolve();

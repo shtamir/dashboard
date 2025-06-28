@@ -33,14 +33,6 @@ export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
   const rangeEnd = new Date(rangeStart);
   rangeEnd.setDate(rangeEnd.getDate() + days);
 
-  console.log('Fetching 2-week window:', {
-    start: rangeStart.toLocaleString(),
-    end: rangeEnd.toLocaleString()
-  });
-  console.log('UTC date range:', {
-    start: rangeStart.toISOString(),
-    end: rangeEnd.toISOString()
-  });
 
   // Fetch Google Calendar color palette
   const colorRes = await fetch('https://www.googleapis.com/calendar/v3/colors', {
@@ -59,7 +51,6 @@ export async function fetchCalendarEvents(): Promise<CalendarEvent[]> {
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
 
-  console.log('🗓️ Google Calendar items:', data.items);
 
   const items: any[] = data.items ?? [];
 
