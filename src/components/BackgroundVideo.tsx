@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import bgVideo from '../assets/videos/bg.mp4';
+import useWakeLock from '@utils/wakeLock';
 
 const INACTIVITY_TIMEOUT = 30000; // ms of inactivity before showing video
 const FRONT_DURATION = 10000; // how long to keep video in front
 
 const BackgroundVideo: React.FC = () => {
+  useWakeLock();
   const [isFront, setIsFront] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inactivityTimer = useRef<number>();
