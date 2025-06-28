@@ -15,10 +15,7 @@ function getWeatherIconUrl(iconCode: string): string {
 function groupForecastsByDay(forecasts: any[], timezoneOffset: number) {
   const dailyForecasts = new Map();
   const baseDate = new Date();
-  baseDate.setFullYear(2025, 5, 1); // Set to June 1st, 2025
   baseDate.setHours(12, 0, 0, 0); // Set to noon for consistent comparison
-  
-  console.log('Processing forecasts:', forecasts);
   
   forecasts.forEach(item => {
     const date = new Date(baseDate);
@@ -40,19 +37,11 @@ function groupForecastsByDay(forecasts: any[], timezoneOffset: number) {
     dayData.temps.push(item.main.temp);
     dayData.conditions.push(item.weather[0].description);
     dayData.weatherIds.push(item.weather[0].id);
-    
-    /*console.log('Weather data for', dayKey, ':', {
-      temp: item.main.temp,
-      condition: item.weather[0].description,
-      id: item.weather[0].id
-    });*/
   });
   
   const result = Array.from(dailyForecasts.values()).map(day => {
     const weatherId = day.weatherIds[Math.floor(day.weatherIds.length / 2)];
-    // console.log('Converting weather ID', weatherId, 'to icon');
     const icon = getWeatherIcon(weatherId);
-    // console.log('Resulting icon:', icon);
     
     return {
       time: day.date.toISOString(),
@@ -62,13 +51,11 @@ function groupForecastsByDay(forecasts: any[], timezoneOffset: number) {
     };
   });
   
-  console.log('Final daily forecast:', result);
   return result;
 }
 
 export async function fetchWeatherData(location: { city: string; country: string }): Promise<WeatherData> {
   if (!API_KEY) {
-    console.log('No API key found, returning mock data');
     return getMockWeatherData();
   }
 
@@ -84,7 +71,6 @@ export async function fetchWeatherData(location: { city: string; country: string
     }
     
     const currentData = await currentResponse.json();
-    console.log('Current weather data:', currentData);
 
     // Fetch 5-day forecast with 3-hour intervals
     const forecastResponse = await fetch(
@@ -97,7 +83,6 @@ export async function fetchWeatherData(location: { city: string; country: string
     }
     
     const forecastData = await forecastResponse.json();
-    console.log('Forecast data:', forecastData);
 
     // Get sunrise and sunset times in local timezone
     const timezoneOffset = currentData.timezone * 1000; // Convert to milliseconds
@@ -126,11 +111,9 @@ export async function fetchWeatherData(location: { city: string; country: string
     // Get current time
     const now = new Date();
     const currentHour = now.getHours();
-    console.log('Current hour:', currentHour);
 
     // Find the last standard 3-hour interval
     const lastInterval = Math.floor(currentHour / 3) * 3;
-    console.log('Last 3-hour interval:', lastInterval);
 
     // Generate hourly data by interpolating between 3-hour intervals
     const interpolatedForecast = [];
@@ -215,7 +198,6 @@ export async function fetchWeatherData(location: { city: string; country: string
       return hour % 3 === 0;
     });
 
-    console.log('Final interpolated forecast:', interpolatedForecast.map(f => ({
       time: new Date(f.time).toLocaleTimeString(),
       temp: f.temperature
     })));
@@ -242,11 +224,9 @@ export async function fetchWeatherData(location: { city: string; country: string
 // Helper function to get mock weather data
 function getMockWeatherData(): WeatherData {
   const today = new Date();
-  today.setFullYear(2025, 5, 1); // Set to June 1st, 2025
   const currentHour = today.getHours();
   today.setHours(currentHour, 0, 0, 0); // Set to current hour
   
-  console.log('Mock weather data - base date:', today.toISOString());
   
   // Generate 24 hours of forecast data starting from current hour
   const forecast = Array.from({ length: 24 }, (_, i) => {
@@ -283,7 +263,6 @@ function getMockWeatherData(): WeatherData {
 
 // Helper function to convert OpenWeather condition codes to emoji icons
 function getWeatherIcon(code: number): string {
-  // console.log('Getting icon for code:', code);
   
   // Handle string codes (just in case)
   if (typeof code === 'string') {

@@ -255,11 +255,8 @@ const FamilyPortal = () => {
 */
 
 useEffect(() => {
-    console.log('🚀 useEffect fired - about to call fetchCalendarEvents');
     fetchCalendarEvents()
       .then((events) => {
-        console.log('✔ got', events.length, 'events from fetch');
-        console.log('🔄 updating with', events.length, 'items');
         setCalendarEvents(events);
       })
       .catch(console.error);
@@ -267,15 +264,12 @@ useEffect(() => {
     // Fetch weather data
     fetchWeatherData(settings.location)
       .then((data) => {
-        console.log('🌤️ Got weather data:', data);
         setWeatherData(data);
       })
       .catch((error) => {
         console.error('Error fetching weather:', error);
         // Load mock data if fetch fails
-        console.log('Loading mock weather data as fallback');
         const mockData = getMockWeatherData();
-        console.log('Setting mock weather data:', mockData);
         setWeatherData(mockData);
       });
   
@@ -288,7 +282,6 @@ useEffect(() => {
 
 // Add a separate useEffect to monitor weather data changes
 useEffect(() => {
-  console.log('Weather data changed:', weatherData);
 }, [weatherData]);
 
   const loadMockData = () => {
@@ -296,7 +289,6 @@ useEffect(() => {
     today.setFullYear(2025, 5, 1); // Set to June 1st, 2025
     today.setHours(12, 0, 0, 0); // Set to noon for consistent comparison
     
-    console.log('Setting up mock events with base date:', today.toISOString());
     
     const mockEvents: CalendarEvent[] = [
       {
@@ -341,7 +333,6 @@ useEffect(() => {
       }
     ];
     
-    console.log('Created mock events:', mockEvents.map(e => ({
       title: e.title,
       start: e.start.toISOString(),
       end: e.end.toISOString()
@@ -587,7 +578,6 @@ useEffect(() => {
     today.setFullYear(2025, 5, 1); // Set to June 1st, 2025
     today.setHours(12, 0, 0, 0); // Set to noon for consistent comparison
     
-    console.log('Setting mock weather data with today:', today.toISOString());
     
     // Generate hourly forecast for the next 24 hours
     const hourlyForecast = Array.from({ length: 24 }, (_, i) => {
@@ -886,7 +876,6 @@ useEffect(() => {
   useEffect(() => {
     const type = detectDeviceType();
     setDeviceType(type);
-    console.log('[Device Detection] Detected device type:', type);
   }, []);
 
   // Revive Google auth state from local storage on load
