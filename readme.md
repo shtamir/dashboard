@@ -20,3 +20,10 @@ npm run dev
 The dashboard now stores your Google access token in `localStorage` so you
 stay signed in even after restarting the TV or browser. To clear the token,
 use the "Log out" option in the settings menu.
+
+## Preventing screen sleep
+
+The dashboard requests a screen wake lock so the TV doesn't dim or show a
+screen saver while it's running. If the browser releases the lock or the page
+regains focus after being hidden, the dashboard automatically re-acquires the
+lock to keep the screen awake.
