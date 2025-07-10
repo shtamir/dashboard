@@ -6,23 +6,29 @@ const useWakeLock = () => {
 
     const requestWakeLock = async () => {
       try {
-        // navigator.wakeLock is not supported on all browsers
-        sentinel = await (navigator as any).wakeLock?.request('screen');
-        sentinel?.addEventListener('release', requestWakeLock);
+        if (!('wakeLock' in navigator)) return;
+        if (!sentinel || sentinel.released) {
+          sentinel = await (navigator as any).wakeLock.request('screen');
+          sentinel.addEventListener('release', requestWakeLock);
+        }
       } catch {
         // ignore wake lock errors
       }
     };
 
     const handleVisibility = () => {
-      if (!document.hidden) {
-        requestWakeLock();
-      }
+      if (!document.hidden) requestWakeLock();
+    };
+
+    const handleInteraction = () => {
+      requestWakeLock();
     };
 
     if ('wakeLock' in navigator) {
       requestWakeLock();
       document.addEventListener('visibilitychange', handleVisibility);
+      const events = ['pointerdown', 'keydown', 'mousedown', 'touchstart'];
+      events.forEach(evt => window.addEventListener(evt, handleInteraction, { passive: true }));
     }
 
     return () => {
@@ -33,6 +39,8 @@ const useWakeLock = () => {
         });
       }
       document.removeEventListener('visibilitychange', handleVisibility);
+      const events = ['pointerdown', 'keydown', 'mousedown', 'touchstart'];
+      events.forEach(evt => window.removeEventListener(evt, handleInteraction));
     };
   }, []);
 };

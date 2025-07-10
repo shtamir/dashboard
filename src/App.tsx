@@ -5,8 +5,10 @@ import LinkDevice from '@components/LinkDevice'; // (we'll create this next)
 import PrivacyPolicy from '@components/PrivacyPolicy';
 import TermsOfService from '@components/TermsOfService';
 import BackgroundVideo from '@components/BackgroundVideo';
+import useWakeLock from '@utils/wakeLock';
 
 const AppContent = () => {
+  useWakeLock();
   const location = useLocation();
   const showBackground = !location.pathname.startsWith('/link');
   return (
