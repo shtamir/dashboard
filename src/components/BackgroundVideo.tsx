@@ -10,21 +10,15 @@ const BackgroundVideo: React.FC = () => {
   const [isFront, setIsFront] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const inactivityTimer = useRef<number>();
-  const hideTimer = useRef<number>();
+  const checkInterval = useRef<number>();
+  const frontStart = useRef<number>();
 
   const showTemporarily = () => {
     setIsFront(true);
+    frontStart.current = Date.now();
     videoRef.current?.play().catch(() => {
       /* ignore autoplay errors */
     });
-    if (hideTimer.current) {
-      clearTimeout(hideTimer.current);
-    }
-    hideTimer.current = window.setTimeout(() => {
-      setIsFront(false);
-      resetInactivityTimer();
-      hideTimer.current = undefined;
-    }, FRONT_DURATION);
   };
 
   const resetInactivityTimer = () => {
@@ -40,11 +34,8 @@ const BackgroundVideo: React.FC = () => {
       /* ignore autoplay errors */
     });
     const handleActivity = () => {
-      if (hideTimer.current) {
-        clearTimeout(hideTimer.current);
-        hideTimer.current = undefined;
-      }
       setIsFront(false);
+      frontStart.current = undefined;
       resetInactivityTimer();
       videoRef.current?.play().catch(() => {
         /* ignore autoplay errors */
@@ -53,14 +44,21 @@ const BackgroundVideo: React.FC = () => {
     const events = ['keydown', 'mousedown', 'touchstart', 'mousemove', 'pointerdown', 'pointermove'];
     events.forEach(evt => window.addEventListener(evt, handleActivity));
 
+    checkInterval.current = window.setInterval(() => {
+      if (frontStart.current && Date.now() - frontStart.current > FRONT_DURATION) {
+        setIsFront(false);
+        frontStart.current = undefined;
+        resetInactivityTimer();
+      }
+    }, 1000);
+
     return () => {
       events.forEach(evt => window.removeEventListener(evt, handleActivity));
       if (inactivityTimer.current) {
         clearTimeout(inactivityTimer.current);
       }
-      if (hideTimer.current) {
-        clearTimeout(hideTimer.current);
-        hideTimer.current = undefined;
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current);
       }
     };
   }, []);
